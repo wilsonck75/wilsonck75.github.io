@@ -15,7 +15,7 @@ url: "https://wilsonck75.github.io" # the base hostname & protocol for your site
 
 #-------------------------------
 # About Section
-subtitle: <span style="color:#f58506"> D³ Data Lab: Data. Decisions. Delivery.  </span>
+subtitle: "<span style='color:#f58506'>D³ Data Lab: Data. Decisions. Delivery.</span>"
 location: "Washington D.C."
 resume_url: /docs/CharlieWilson_CV.pdf
 avatar_image: /img/profile_picture.JPG
@@ -51,6 +51,7 @@ defaults:
 #   - vendor/cache/
 #   - vendor/gems/
 #   - vendor/ruby/
+
 
 
 
