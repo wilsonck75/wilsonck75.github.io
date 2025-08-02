@@ -11,7 +11,7 @@ plugins:
 title: Charlie Wilson
 description: "I’m Charlie Wilson — a former portfolio manager and global investor with 20+ years of experience across emerging and developed markets. Today, I’m focused on applying data science and quantitative analysis to real-world challenges in development finance, economics, and technology. Let’s connect — I’m always open to collaboration or conversation."
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://wilsonck75.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 
 #-------------------------------
 # About Section
@@ -51,6 +51,7 @@ defaults:
 #   - vendor/cache/
 #   - vendor/gems/
 #   - vendor/ruby/
+
 
 
 
