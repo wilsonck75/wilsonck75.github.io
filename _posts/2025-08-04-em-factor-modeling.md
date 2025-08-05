@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Factor Exposure Modeling in Emerging Markets"
-image: "/posts/em_factors.jpg"
+image: "/posts/brics-association-of-five-major-emerging-national-economies.jpg"
 tags: [Python, Finance, Data Science]
 ---
 
