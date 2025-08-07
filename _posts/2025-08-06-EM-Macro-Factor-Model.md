@@ -2,14 +2,14 @@
 layout: post
 title: "Emerging Markets Macro Factor Model: A Data Science Approach to Global Finance"
 date: 2025-08-06
-image: "/posts/em-macro-factor-model.jpeg"
+image: "/posts/brics-association-of-five-major-emerging-national-economies.jpg"
 categories: [Python, Data Science, Finance, Machine Learning]
 tags: [Python, Bloomberg, PCA, Factor Models, Emerging Markets, Risk Management, Portfolio Analysis]
 ---
 
 # Emerging Markets Macro Factor Model: A Data Science Approach to Global Finance
 
-_15 minute read_
+
 
 In this post, I'll walk you through a comprehensive **multi-factor model** that quantifies how global macroeconomic conditions influence emerging market (EM) equity performance. This project combines **Principal Component Analysis (PCA)**, **rolling window regression**, and **advanced visualization techniques** to create a robust framework for understanding EM market dynamics.
 
