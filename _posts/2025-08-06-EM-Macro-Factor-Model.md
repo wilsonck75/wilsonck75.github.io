@@ -7,32 +7,31 @@ categories: [Python, Data Science, Finance, Machine Learning]
 tags: [Python, Bloomberg, PCA, Factor Models, Emerging Markets, Risk Management, Portfolio Analysis]
 ---
 
+<!-- markdownlint-disable MD025 -->
+
 # Emerging Markets Macro Factor Model: A Data Science Approach to Global Finance
 
-
-
-In this post, I'll walk you through a comprehensive **multi-factor model** that quantifies how global macroeconomic conditions influence emerging market (EM) equity performance. This project combines **Principal Component Analysis (PCA)**, **rolling window regression**, and **advanced visualization techniques** to create a robust framework for understanding EM market dynamics.
+In this post, I'll walk you through a comprehensive **multi-factor equity model** that quantifies how global macroeconomic conditions influence emerging market (EM) equity performance. This project combines **Principal Component Analysis (PCA)**, **rolling window regression**, and **advanced visualization techniques** to create a robust framework for understanding EM market dynamics.
 
 If you're interested in quantitative finance, risk management, or data-driven investment strategies, this project demonstrates how modern data science techniques can unlock insights in complex financial markets.
 
-Let's dive into building a professional-grade emerging markets factor analysis system!
+## What is an Equity Market Factor Model?
 
-## What Are Emerging Markets Factor Models?
-
-An **emerging markets factor model** is a quantitative framework that explains EM equity returns using a set of systematic risk factors - typically global macroeconomic variables. These models help investors understand:
+An **equity factor model** is a quantitative framework that explains in this case emerging markets equity returns using a set of systematic risk factors - typically global macroeconomic variables. These models help investors understand:
 
 - **Risk Attribution**: Which macro factors drive EM performance?
 - **Portfolio Construction**: How to optimize EM allocations based on macro outlook
-- **Risk Management**: Quantifying exposure to global economic shocks
-- **Market Timing**: Identifying regime changes in factor sensitivity
+- **Risk Management**: Understanding and quantifying exposure to global economic shocks
+- **Market Timing**: Identifying the impact of regime changes in factor sensitivity
 
 ## Project Overview: Comprehensive Factor Analysis 🚀
 
-Our implementation uses a **sophisticated multi-step approach** with several key innovations for maximum insight:
+Our implementation uses a **multi-step approach** with several key innovations for better insight:
 
 ### 1. Data Universe & Methodology 📊
 
 **Emerging Market Coverage:**
+
 - **Brazil (MXBR)**: Latin America's largest economy, commodity-driven
 - **India (MXIN)**: South Asian technology and services hub
 - **China (MXCN)**: World's second-largest economy, manufacturing powerhouse
@@ -44,6 +43,7 @@ Our implementation uses a **sophisticated multi-step approach** with several key
 - **US (MXUS)**: Developed market benchmark for comparison
 
 **Enhanced Macro Factor Universe:**
+
 - **USD Index (DXY)**: Dollar strength vs. major currencies
 - **Oil (Brent)**: Global energy prices and commodity cycles
 - **US 10Y Yield**: Risk-free rate benchmark and capital flows
@@ -57,6 +57,7 @@ Our implementation uses a **sophisticated multi-step approach** with several key
 
 #### Principal Component Analysis (PCA)
 Instead of using raw macro factors (which suffer from multicollinearity), we apply PCA to:
+
 - **Reduce dimensionality** from 8 enhanced factors to 3 principal components
 - **Capture 85-90%** of macro factor variance
 - **Eliminate multicollinearity** issues
@@ -68,6 +69,7 @@ EM_Index_Return = α + β₁×PC1 + β₂×PC2 + β₃×PC3 + ε
 ```
 
 #### Rolling Window Analysis
+
 - **60-day rolling windows** for time-varying analysis
 - **Dynamic R² tracking** to monitor model stability
 - **Regime identification** through changing factor sensitivity
@@ -731,6 +733,7 @@ def rolling_r2_scores(X, Y, window=60, n_components=3):
 ```
 
 ### Key Technical Features:
+
 - **Modular Design**: Reusable functions for different analyses
 - **Error Handling**: Robust numerical computation with fallback methods
 - **Performance Optimization**: Efficient matrix operations and memory management
