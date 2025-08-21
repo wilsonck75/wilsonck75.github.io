@@ -1,0 +1,22 @@
+# --- Secrets ---
+.env
+*.env
+.env.*
+!.env.example   # allow a template without secrets
+
+# --- Python virtual envs ---
+.venv/
+venv/
+ENV/
+
+# --- VS Code settings ---
+.vscode/*
+!.vscode/settings.json  # allow project-specific settings if needed
+
+# --- macOS system files ---
+.DS_Store
+
+# --- Python cache ---
+__pycache__/
+*.py[cod]
+
