@@ -1000,7 +1000,6 @@ The modular design ensures the framework can:
   - [04_summary_report.ipynb](https://github.com/wilsonck75/D-Cubed-Data-Lab/blob/main/macro-factor-model-em/notebooks/04_summary_report.ipynb) - Executive summary with comprehensive temporal insights
 
 - **🎨 Enhanced Visualizations**:
-  - [Enhanced Factor Analysis Charts](https://github.com/wilsonck75/D-Cubed-Data-Lab/tree/main/macro-factor-model-em/output/plots) - Comprehensive visualization suite with expanded universe
   - [Variance Capture Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/variance_capture_analysis.png) - Detailed analysis of PCA variance capture and trade-offs
   - [Individual Market Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/Brazil.png) - Example: Brazil index factor sensitivity
   - [Enhanced Rolling R² Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_all_indices_comparison.png) - Dynamic sensitivity tracking across expanded universe
