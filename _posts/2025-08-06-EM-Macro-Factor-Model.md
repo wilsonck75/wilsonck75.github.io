@@ -11,26 +11,49 @@ tags: [Python, Bloomberg, PCA, Factor Models, Emerging Markets, Risk Management,
 
 # Emerging Markets Macro Factor Model: A Data Science Approach to Global Finance
 
-In this post, I'll walk you through a comprehensive **multi-factor equity model** that quantifies how global macroeconomic conditions influence emerging market (EM) equity performance. This project combines **Principal Component Analysis (PCA)**, **rolling window regression**, and **advanced visualization techniques** to create a robust framework for understanding EM market dynamics.
+Emerging markets often sit at the crossroads of global and local forces. On one hand, they are deeply exposed to shifts in global liquidity, U.S. interest rates, dollar strength, and commodity cycles. On the other hand, their returns are just as often driven by uniquely domestic dynamics — policy choices, industrial structures, or country-specific shocks. This duality makes them fascinating but also notoriously difficult to model: are EM equities primarily a reflection of global macro tides, or do they chart their own course?
 
-If you're interested in quantitative finance, risk management, or data-driven investment strategies, this project demonstrates how modern data science techniques can unlock insights in complex financial markets.
+That question is at the heart of this project. We set out to build a **multi-factor equity model** that could disentangle the relative weight of global versus local drivers in EM performance. Using Bloomberg’s BQuant platform, we combined **Principal Component Analysis (PCA)** to compress complex macro datasets into interpretable factors, **rolling regressions** to track how relationships evolve through time, and **visual analytics** to highlight patterns that static models often miss. The result is a framework that bridges quantitative rigor with intuitive storytelling — one that lets us say not just *how much* EM markets are explained by global macro, but also *when* and *why*.
 
-## What is an Equity Market Factor Model?
+This matters for investors because EM sensitivity is rarely constant. During normal times, local dynamics dominate and global factors explain only a modest share of returns. But during periods of stress — think the 2015/16 China growth scare, tariff threats in 2018, COVID-19, or Fed tightening cycles — global forces can suddenly explain the bulk of the variance, sweeping diverse markets into the same tide. Understanding this ebb and flow is critical for **risk management, portfolio construction, and alpha generation**.
 
-An **equity factor model** is a quantitative framework that explains in this case emerging markets equity returns using a set of systematic risk factors - typically global macroeconomic variables. These models help investors understand:
+In the sections that follow, we’ll first define what a factor model is and why it’s useful, then walk through the design of our EM macro model, and finally highlight key results. Along the way, we’ll explore not just the top three principal components, but also secondary factors, specific crisis periods, and rolling-window dynamics. The goal is to provide a nuanced but approachable view of how global and local forces shape emerging market equities.
 
-- **Risk Attribution**: Which macro factors drive EM performance?
-- **Portfolio Construction**: How to optimize EM allocations based on macro outlook
-- **Risk Management**: Understanding and quantifying exposure to global economic shocks
-- **Market Timing**: Identifying the impact of regime changes in factor sensitivity
+## What is an Equity Factor Model?
+
+An **equity factor model** is a toolkit for explaining returns using systematic drivers. Instead of treating market moves as random, the model attributes performance to quantifiable forces like currencies, interest rates, commodities, or volatility. For investors, this makes abstract market movements more tangible:
+
+- **Risk attribution:** Which macro factors matter most right now?  
+- **Portfolio construction:** How should EM weights shift with the macro cycle?  
+- **Risk management:** Where are exposures hiding that could amplify a shock?  
+- **Market timing:** How do sensitivities evolve through different regimes?  
+
+In short, a factor model is about turning noisy markets into interpretable signals — bridging raw data and actionable investment insight.
+
+---
+
+### 🌍 Executive Summary
+
+This project set out to answer a simple but important question: **how much of emerging market equity performance is explained by global macro forces versus local dynamics?** Using Bloomberg’s BQL platform, we built a macro factor model that connects EM index returns to drivers like the dollar, interest rates, volatility, and commodities. The analysis combines several complementary angles:  
+- **Principal Components Analysis (PCA):** distilling global macro variables into a small set of common risk factors.  
+- **Extended factor exploration:** examining not only the top three PCs but also lower-order components that capture subtler themes.  
+- **Time dynamics:** testing the model over specific historical windows and through rolling regressions to see how macro sensitivity evolves.  
+
+The results show a clear pattern: **most EMs are not strongly explained by global macro factors** under normal conditions. Instead, local policy choices, sectoral mix, and country-specific events dominate. But during crisis episodes global macro factors surge in importance, temporarily driving much larger shares of EM return variance.
+
+At the cross-section level, we find meaningful differences across countries. **Mexico and Brazil stand out as the most macro-sensitive markets**, reflecting trade ties, commodity exposures, and capital flow dependence. **Taiwan, Korea, and India** sit at the other extreme, with returns largely shaped by local drivers such as tech cycles, industrial policy, or domestic demand. **China**, while globally significant, also shows surprisingly low macro sensitivity, underlining the importance of its policy-driven market structure.
+
+For practitioners, this framework offers more than just an academic exercise. It highlights where EM exposures are likely to behave like leveraged plays on global risk, and where diversification potential lies in markets driven by local dynamics. Looking ahead, the model could be extended by incorporating additional factors (credit spreads, liquidity indicators, geopolitical risk indices), testing alternative horizons, and comparing sensitivity across asset classes.
+
+In short: **emerging markets are not monolithic**. They oscillate between being swept up by global tides and charting their own course. This analysis helps investors understand when — and where — each force is likely to dominate.
 
 ## Project Overview: Comprehensive Factor Analysis 🚀
 
-Our implementation uses a **multi-step approach** with several key innovations for better insight:
+Our implementation uses a **multi-step approach** with several key features for better insight:
 
 ### 1. Data Universe & Methodology 📊
 
-**Emerging Market Coverage:**
+**Emerging Market Country Indices (MSCI):**
 
 - **Brazil**: Latin America's largest economy, commodity-driven
 - **India**: South Asian technology and services hub
@@ -42,7 +65,7 @@ Our implementation uses a **multi-step approach** with several key innovations f
 - **Korea**: Advanced EM market, export-oriented economy
 - **US**: Developed market benchmark for comparison
 
-**Enhanced Macro Factor Universe:**
+**Macro Factors:**
 
 - **USD Index (DXY)**: Dollar strength vs. major currencies
 - **Oil (Brent)**: Global energy prices and commodity cycles
@@ -52,9 +75,10 @@ Our implementation uses a **multi-step approach** with several key innovations f
 - **Credit Spreads (BAA)**: Corporate risk premium indicator
 - **Term Spread**: Yield curve slope (10Y - 2Y), growth expectations
 
-### 2. Advanced Analytical Framework ⚡
+### 2. Analytical Framework ⚡
 
 #### Principal Component Analysis (PCA)
+
 Instead of using raw macro factors (which suffer from multicollinearity), we apply PCA to:
 
 - **Reduce dimensionality** from 7 enhanced factors to 3 principal components
@@ -63,8 +87,9 @@ Instead of using raw macro factors (which suffer from multicollinearity), we app
 - **Create orthogonal factors** for cleaner interpretation
 
 #### Multi-Factor Regression Model
-```
-EM_Index_Return = α + β₁×PC1 + β₂×PC2 + β₃×PC3 + ε
+
+```Python
+EM Index Return = α + β₁×PC1 + β₂×PC2 + β₃×PC3 + ε
 ```
 
 #### Rolling Window Analysis
@@ -73,7 +98,7 @@ EM_Index_Return = α + β₁×PC1 + β₂×PC2 + β₃×PC3 + ε
 - **Dynamic R² tracking** to monitor model stability
 - **Regime identification** through changing factor sensitivity
 
-### 3. Technical Implementation Excellence
+### 3. Technical Implementation Overview
 
 | Component | Method | Purpose |
 |-----------|---------|---------|
@@ -86,25 +111,27 @@ EM_Index_Return = α + β₁×PC1 + β₂×PC2 + β₃×PC3 + ε
 
 ## Data Acquisition & Processing 📥
 
-The foundation of any robust factor model is high-quality, comprehensive data that has been mapped to the same time frame. Our implementation leverages Bloomberg's real-time market data infrastructure:
+We use Bloomberg’s BQL within the BQuant environment to access both index and macroeconomic data, which we then save into a CSV file for efficient reloading.
 
-### Data Loading and Feature Engineering
-
-Our implementation loads the pre-processed dataset and applies feature engineering to handle negative values in the Term Spread:
+- **Time Period**: 10-year lookback for statistical robustness and long-term factor stability
+- **Missing Data**: Bloomberg's native forward-fill methodology for market holidays
 
 ```python
-# Core data manipulation library
+# =============================================================================
+# STEP 0: LOAD ESSENTIAL LIBRARIES   
+# =============================================================================
+#Core data manipulation
 import pandas as pd
-# Bloomberg Query Language API
-import bql
-# Operating system interface for file operations
+import numpy as np
 import os
-
+# =============================================================================
+# STEP 1: Create helper function for extracting date for multiple time series 
+# =============================================================================
 def fetch_bql_series(assets, bql_service, date_range):
     """
     Fetches time series data for given assets using Bloomberg Query Language (BQL).
     
-    This function provides a streamlined interface to Bloomberg's institutional data,
+    This function provides a streamlined interface to Bloomberg's data,
     handling multiple asset queries efficiently and returning clean pandas DataFrames.
 
     Parameters:
@@ -127,7 +154,6 @@ def fetch_bql_series(assets, bql_service, date_range):
     ------
     - Uses PX_LAST field for consistent daily closing values
     - Bloomberg handles missing values with native forward-fill
-    - Maintains data integrity with institutional-grade validation
     """
     data = {}
     
@@ -142,12 +168,21 @@ def fetch_bql_series(assets, bql_service, date_range):
     # Combine all series into single DataFrame with datetime alignment
     return pd.DataFrame(data)
 
-# Initialize Bloomberg Query Language service
-bq = bql.Service()
-# Set date range: 10-year lookback for statistical robustness
-date_range = bq.func.range('-10Y', '0D')
+# =============================================================================
+#  STEP 2: DATA EXPORT CONFIGURATION & ASSET UNIVERSE DEFINITION
+# =============================================================================
 
-# Define EM Index universe with comprehensive regional coverage
+# Define output path for the combined dataset
+output_path = '../data/combined_em_macro_data.csv'
+
+print("🔧 Configuration Summary:")
+print(f"   📂 Output Path: {output_path}")
+print(f"   🌍 Setting up comprehensive EM and macro factor universe...")
+
+# =============================================================================
+# STEP 3: DEFINE EMERGING MARKETS EQUITY INDICES (MSCI)
+# =============================================================================
+# Using MSCI indices for consistency and institutional benchmarking
 em_assets = {
     # LATIN AMERICA - Commodity-driven economies with US trade linkages
     'Brazil': 'MXBR Index',        # MSCI Brazil - LatAm largest economy
@@ -166,8 +201,11 @@ em_assets = {
     # DEVELOPED MARKET BENCHMARK - For relative performance analysis
     'US': 'MXUS Index'             # MSCI USA - Developed market benchmark
 }
-
-# Define enhanced macroeconomic factors universe
+# =============================================================================
+# STEP 4: DEFINE MACROECONOMIC FACTORS 
+# =============================================================================
+# Comprehensive factor set covering monetary policy, risk sentiment, 
+# currency dynamics, and commodity cycles
 macro_assets = {
     # MONETARY POLICY & RATES
     'USD_Index': 'DXY Curncy',         # US Dollar Index - currency strength
@@ -183,104 +221,266 @@ macro_assets = {
     'Copper': 'LMCADY Comdty'         # LME copper - industrial demand proxy
 }
 
-# Execute streamlined data collection using helper function
-print("🚀 Executing streamlined data collection...")
-print("📈 Fetching EM index data...")
-em_data = fetch_bql_series(em_assets, bq, date_range)
+# =============================================================================
+# STEP 5: FINAL CONFIGURATION SUMMARY
+# =============================================================================
+print("✅ Asset Universe Configuration Complete:")
+print(f"   📂 Output Path: {output_path}")
+print(f"   🌍 EM Markets: {len(em_assets)} total ({len(em_assets)-1} EM + 1 DM benchmark)")
+print(f"   📊 Macro Factors: {len(macro_assets)} base factors")
+print(f"   🔍 Derived Factors: 1 (Term Spread = 10Y - 2Y)")
+print(f"   📈 Total Variables: {len(em_assets) + len(macro_assets) + 1}")
+print(f"   🎯 Ready for Bloomberg data collection pipeline...")
 
-print("📊 Fetching macro factor data...")
-macro_data = fetch_bql_series(macro_assets, bq, date_range)
+# =============================================================================
+# STEP 6: Bloomberg Authentication & Connection Configuration
+# =============================================================================
+print("🔗 Establishing Bloomberg BQL Connection...")
+print("   • Authenticating with Bloomberg Professional services")
+print("   • Initializing BQL query interface")
+bq = bql.Service()  # Create authenticated Bloomberg service instance
 
-# Calculate derived Term Spread indicator (10Y - 2Y yield curve slope)
-macro_data['Term_Spread'] = macro_data['US_10Y_Yield'] - macro_data['US_2Y_Yield']
+# Configure 10-year lookback period for robust statistical analysis
+print("\n📅 Setting Data Collection Parameters...")
+date_range = bq.func.range('-10Y', '0D')  # 10 years back from today
+print(f"   • Time Horizon: 10-year lookback for statistical robustness")
+print(f"   • Frequency: Daily closing prices (business days)")
+print(f"   • Data Quality: Bloomberg native forward-fill for missing values")
 
-print(f"✅ Data collection complete!")
-print(f"   📊 EM Markets: {len(em_assets)} indices")
-print(f"   📈 Macro Factors: {len(macro_assets)} + 1 derived = {len(macro_assets)+1} total")
+# =============================================================================
+# STEP 7: EMERGING MARKETS EQUITY DATA COLLECTION
+# =============================================================================
+print("\n🌍 Step 1: Fetching EM Equity Index Data...")
+print(f"   • Markets: {list(em_assets.keys())}")
+print(f"   • Data Field: PX_LAST (daily closing levels)")
+em_df = fetch_bql_series(em_assets, bq, date_range)
+
+# Validate EM data collection
+print(f"\n✅ EM Data Collection Complete:")
+print(f"   📊 Shape: {em_df.shape[0]} observations × {em_df.shape[1]} indices")
+print(f"   📅 Period: {em_df.index.min().strftime('%Y-%m-%d')} to {em_df.index.max().strftime('%Y-%m-%d')}")
+print(f"   🕰️ Trading Days: {len(em_df)} business days")
+
+# =============================================================================
+# STEP 8: MACROECONOMIC FACTORS DATA COLLECTION
+# =============================================================================
+print(f"\n📈 Step 2: Fetching Macroeconomic Factor Data...")
+print(f"   • Base Factors: {list(macro_assets.keys())}")
+print(f"   • Asset Classes: Rates, FX, Commodities, Volatility, Credit")
+macro_df = fetch_bql_series(macro_assets, bq, date_range)
+
+# =============================================================================
+# STEP 9: FEATURE ENGINEERING - TERM SPREAD CALCULATION
+# =============================================================================
+print(f"\n🔧 Step 3: Engineering Derived Factors...")
+# Calculate yield curve term spread as growth/policy indicator
+macro_df['Term_Spread'] = macro_df['US_10Y_Yield'] - macro_df['US_2Y_Yield']
+print(f"   • Term Spread: US 10Y - 2Y yields (yield curve slope)")
+print(f"   • Economic Significance: Growth expectations vs. policy stance")
+
+# Validate macro data collection
+print(f"\n✅ Macro Data Collection Complete:")
+print(f"   📊 Shape: {macro_df.shape[0]} observations × {macro_df.shape[1]} factors")
+print(f"   📈 Total Factors: {len(macro_assets)} base + 1 derived = {macro_df.shape[1]}")
+
+# =============================================================================
+# STEP 10: DATA INTEGRATION & QUALITY ASSURANCE
+# =============================================================================
+print(f"\n🔄 Step 4: Data Integration & Quality Control...")
+print(f"   • Aligning EM and macro datasets on trading calendar")
+print(f"   • Performing inner join to ensure data completeness")
+
+# Merge datasets on datetime index with inner join for data integrity
+combined_df = pd.merge(em_df, macro_df, left_index=True, right_index=True)
+combined_df = combined_df.sort_index().dropna()  # Remove any remaining missing values
+
+# =============================================================================
+# STEP 11: DATA VALIDATION
+# =============================================================================
+print(f"\n📊 Final Dataset Validation:")
+print(f"   📈 Combined Shape: {combined_df.shape[0]} observations × {combined_df.shape[1]} variables")
+print(f"   📅 Final Period: {combined_df.index.min().strftime('%Y-%m-%d')} to {combined_df.index.max().strftime('%Y-%m-%d')}")
+print(f"   🌍 EM Markets: {len(em_assets)} indices")
+print(f"   📊 Macro Factors: {len(macro_assets) + 1} total (inc. term spread)")
+print(f"   🔍 Data Completeness: {((1 - combined_df.isnull().sum().sum() / (combined_df.shape[0] * combined_df.shape[1])) * 100):.2f}%")
+print(f"   ❌ Missing Values: {combined_df.isnull().sum().sum()} total")
+
+# =============================================================================
+# STEP 12: DATA EXPORT 
+# =============================================================================
+print(f"\n💾 Step 6: Data Export & Preservation...")
+# Ensure output directory exists
+os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+# Export to CSV with datetime index preservation
+combined_df.to_csv(output_path)
+print(f"✅ Dataset successfully exported to: {output_path}")
+print(f"   📁 File Format: CSV with datetime index")
+print(f"   🔗 Ready for: Factor modeling, PCA analysis, regression modeling")
+
+# Final summary statistics
+print(f"\n📋 Dataset Summary Statistics:")
+print(f"   • Memory Usage: {combined_df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+print(f"   • Index Type: {type(combined_df.index).__name__}")
+print(f"   • Data Types: {dict(combined_df.dtypes.value_counts())}")
+print(f"\n🎯 Data Pipeline Complete - Ready for Factor Analysis!")
+
 ```
 
-### Variable Separation
+### Data Preparation and Feature Engineering
 
-Separate the dataset into dependent variables (EM returns) and independent variables (macro factors):
+ Next, we reload the dataset from the CSV file, shift the term premium variable, and then take the log of the returns:
+
+ - **Feature Engineering**: We shift the term premium so that it is always positive before taking the log
+ - **Return Normalization**: Log returns for stationarity and normal distribution properties
+ - **Scale Data**: Use the standard scaler to prepare data for PCA
 
 ```python
+# =============================================================================
+# STEP 0: LOAD ESSENTIAL LIBRARIES   
+# =============================================================================
+# Core data manipulation
+import pandas as pd
+import numpy as np
+import os
+
+# Machine learning components
+from sklearn.decomposition import PCA
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
+
+# Visualization libraries
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Set plotting style
+plt.style.use('default')
+sns.set_palette("husl")
+
 # Define EM market prefixes
+# =============================================================================
+# STEP 1: DATA LOADING
+# =============================================================================
+df = pd.read_csv('../data/combined_em_macro_data.csv', parse_dates=['date'], index_col='date')
+
+print(f"📊 Dataset loaded: {df.shape[0]} rows × {df.shape[1]} columns")
+print(f"📅 Date range: {df.index.min()} to {df.index.max()}")
+# =============================================================================
+# STEP 2: ENGINEERING TERM SPREAD TO REMOVE NEGATIVE VALUES
+# =============================================================================
+shift_value = df['Term_Spread'].min()
+if shift_value < 0:
+    print("Shift value is negative, adding a buffer to avoid negative values")
+    shift_value = df['Term_Spread'].min() - 0.1 # add a buffer to avoid negative values
+    print(f"Shift value: {shift_value}")
+else:
+    print("Shift value is positive, no buffer needed")
+
+df['Term_Spread_Engineered'] = df['Term_Spread'] - shift_value
+
+# Display the results
+print(f"🔧 Term_Spread Engineering:")
+print(f"   • Original min: {df['Term_Spread'].min():.4f}")
+print(f"   • Original max: {df['Term_Spread'].max():.4f}")
+print(f"   • Shift applied: +{shift_value:.4f}")
+print(f"   • Engineered min: {df['Term_Spread_Engineered'].min():.4f}")
+print(f"   • Engineered max: {df['Term_Spread_Engineered'].max():.4f}")
+df.drop(columns=['Term_Spread'], inplace=True)
+df.rename(columns={'Term_Spread_Engineered': 'Term_Spread'}, inplace=True)
+
+# =============================================================================
+# STEP 3: CALCULATE LOG RETURNS
+# =============================================================================
+log_returns = np.log(df / df.shift(1)).dropna()
+
+print(f"📈 Log returns calculated: {log_returns.shape[0]} observations")
+print(f"🧹 Data cleaning: {df.shape[0] - log_returns.shape[0]} rows dropped (missing/infinite values)")
+
+# Display basic statistics
+print(f"\n📋 Log Returns Summary:")
+log_returns.describe().round(4)
+```
+
+ ### Variable Separation
+
+Separate data into dependent and independent variables for principle component analysis.
+
+```python
+# =============================================================================
+# STEP 0: DEFINE EM AND US COLUMNS 
+# =============================================================================
 em_prefixes = (
     "Brazil", "India", "China", "SouthAfrica",
     "Mexico", "Indonesia", "Taiwan", "Korea", "US"
 )
 
-# Define macro columns to include
-macro_columns = [
-    col for col in df.columns 
-    if col.startswith(('USD_Index', 'Oil_Brent', 'US_10Y_Yield', 
-                      'US_2Y_Yield', 'VIX', 'BAA_spread', 'Term_Spread'))
-]
+# the macro columns you want to avoid
+exclude = {"USD_Index", "US_10Y_Yield", "US_2Y_Yield"}
 
-# Separate EM returns (Y) and macro factors (X)
+# =============================================================================
+# STEP 1: EXTRACT EM COLUMNS AND TAKE THE LOG OF THE RETURNS
+# =============================================================================
+em_columns = [
+    col for col in df.columns
+    if col.startswith(em_prefixes)
+    and col not in exclude
+]
 Y = log_returns[em_columns]
+
+# =============================================================================
+# STEP 2: EXTRACT MACRO COLUMNS AND TAKE THE LOG OF THE RETURNS 
+# =============================================================================
+macro_columns = [col for col in df.columns if col.startswith(('USD_Index', 'Oil_Brent', 'US_10Y_Yield', 'US_2Y_Yield', 'VIX', 'BAA_spread', 'Term_Spread'))]
+
+log_returns = np.log(df / df.shift(1)).dropna()
+
+
 X = log_returns[macro_columns]
 
-print(f"📊 Model Setup:")
+print(f"\n📊 Model Setup:")
 print(f"   • Y matrix (EM returns): {Y.shape}")
 print(f"   • X matrix (Macro factors): {X.shape}")
+
+# =============================================================================
+# STEP 3: SCALE INPUT VARIABLES FOR PCA 
+# =============================================================================
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+print(f"📏 Standardization completed:")
+print(f"   • Original X shape: {X.shape}")
+print(f"   • Scaled X shape: {X_scaled.shape}")
+print(f"   • Mean: {X_scaled.mean():.6f}")
+print(f"   • Std: {X_scaled.std():.6f}")
+
 ```
 
-### Data Quality & Processing
-
-- **Time Period**: 10-year lookback for statistical robustness and long-term factor stability
-- **Missing Data**: Bloomberg's native forward-fill methodology for market holidays
-- **Return Calculation**: Log returns for stationarity and normal distribution properties
-- **Standardization**: Equal weighting for PCA input variables and orthogonal factor extraction
-
-## Principal Component Analysis Results 🔍
-
-Our PCA implementation successfully reduces the 7-dimensional macro factor space while preserving most of the underlying variance:
 
 ### Detailed PCA Implementation
 
+PCA takes our original set of macro time series and distills them into three new composite factors. Each factor is a weighted blend of the underlying variables, and together they capture the main patterns in the data. The result is a set of three time series, in this case our principal components, that move through time just like the original variables, but in a way that highlights the broadest and most important sources of variation.
+
+
 ```python
-# Import required libraries for factor modeling
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score
-import matplotlib.pyplot as plt
-import seaborn as sns
+# =============================================================================
+# STEP 0: EXECUTE PCA ANALYSIS WITH 3 COMPONENTS 
+# =============================================================================
+n_components = 3
+pca = PCA(n_components=n_components)
+X_pca = pca.fit_transform(X_scaled)
 
-# Load the combined EM and macro dataset
-data = pd.read_csv('../data/combined_em_macro_data.csv', index_col='date', parse_dates=True)
+# =============================================================================
+# STEP 1: EXTRACT EXPLAINED VARIANCE AND CUMULATIVE VARIANCE
+# =============================================================================
+explained_var = pca.explained_variance_ratio_
+cumulative_var = np.cumsum(explained_var)
 
-# Separate EM indices and enhanced macro factor data
-em_cols = ['Brazil', 'India', 'China', 'SouthAfrica', 'Mexico', 'Indonesia', 'Taiwan', 'Korea', 'US']
-macro_cols = ['USD_Index', 'Oil_Brent', 'US_10Y_Yield', 'US_2Y_Yield', 'VIX', 'Copper', 'BAA_spread', 'Term_Spread']
+print(f"\n🔍 PCA Results:")
+for i in range(n_components):
+    print(f"   • PC{i+1}: {explained_var[i]:.1%} variance explained")
+print(f"   • Total: {cumulative_var[-1]:.1%} variance captured")
 
-# Calculate log returns for stationarity
-em_returns = np.log(data[em_cols] / data[em_cols].shift(1)).dropna()
-macro_returns = np.log(data[macro_cols] / data[macro_cols].shift(1)).dropna()
+print(f"\n📊 Principal Components Matrix: {X_pca.shape}")
 
-# Standardize macro factors for PCA
-scaler = StandardScaler()
-macro_scaled = scaler.fit_transform(macro_returns)
-
-# Apply Principal Component Analysis
-pca = PCA()
-macro_pca = pca.fit_transform(macro_scaled)
-
-# Create DataFrame with principal components
-pc_df = pd.DataFrame(
-    macro_pca[:, :3],  # Use first 3 components
-    index=macro_returns.index,
-    columns=['PC1', 'PC2', 'PC3']
-)
-
-print("📊 PCA Results Summary:")
-print(f"PC1 Explained Variance: {pca.explained_variance_ratio_[0]:.1%}")
-print(f"PC2 Explained Variance: {pca.explained_variance_ratio_[1]:.1%}")
-print(f"PC3 Explained Variance: {pca.explained_variance_ratio_[2]:.1%}")
-print(f"Total Variance Captured: {sum(pca.explained_variance_ratio_[:3]):.1%}")
 ```
 
 ### Explained Variance Analysis
@@ -292,20 +492,79 @@ The three principal components capture the majority of enhanced macro factor var
 - **PC3**: ~15.3% of variance (commodity cycles and credit risk premiums)
 - **Total**: ~65.0% of enhanced macro factor variance captured
 
+![Variance Explained by PC1, PC2, PC3](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/markdown_plots/ExplainedVarianc_3PCs.png)
+
+*Figure: Variance explained by the first three principal components individually and cumulatively.*
+
 ### Variance Capture Analysis: Understanding the 65% Threshold
 
 A key question in factor modeling is: **"How should we think about only 65% of the variance in macro factors being captured by PCA?"**
 
-Our comprehensive variance capture analysis reveals important insights:
+To better illustrate the power of the first 3 principle components we calcuate the next 4 to illustrate the tradeoff between additional model complexity and information loss. 
+
+```python
+# 🔍 DETAILED VARIANCE CAPTURE ANALYSIS
+print(f"\n🔍 DETAILED VARIANCE CAPTURE ANALYSIS:")
+print("="*60)
+   
+# Full PCA to see all components
+pca_full = PCA()
+X_pca_full = pca_full.fit_transform(X_scaled)
+   
+# Calculate cumulative variance for all components
+explained_var_full = pca_full.explained_variance_ratio_
+cumulative_var_full = np.cumsum(explained_var_full)
+   
+print(f"📈 PCA Variance Analysis:")
+print(f"   Total variance to explain: 100%")
+print(f"   Variance captured by 3 PCs: {cumulative_var_full[2]:.1%}")
+print(f"   Variance captured by 4 PCs: {cumulative_var_full[3]:.1%}")
+print(f"   Variance captured by 5 PCs: {cumulative_var_full[4]:.1%}")
+print(f"   Variance captured by 6 PCs: {cumulative_var_full[5]:.1%}")
+print(f"   Variance captured by 7 PCs: {cumulative_var_full[6]:.1%}")
+
+```
 
 #### **Detailed Variance Breakdown:**
+
 - **3 PCs capture 65.0%** of macro factor variance
 - **4 PCs capture 76.7%** (significant improvement)
 - **5 PCs capture 87.6%** (major improvement)
 - **6 PCs capture 96.8%** (almost complete)
 - **7 PCs capture 100.0%** (complete)
 
+Next we look at how a different number of principle components impact average R² scores by regressing different combinations of the components against EM returns.
+```python
+results = {}
+for n_components_test in [1, 2, 3, 4, 5, 6, 7]:
+    # Apply PCA with n_components
+    pca_test = PCA(n_components=n_components_test)
+    X_pca_test = pca_test.fit_transform(X_scaled)
+       
+    # Calculate R² for each market
+    r2_scores_test = []
+    for col in Y.columns:
+        model_test = LinearRegression().fit(X_pca_test, Y[col])
+        r2_test = model_test.score(X_pca_test, Y[col])
+        r2_scores_test.append(r2_test)
+       
+    avg_r2_test = np.mean(r2_scores_test)
+    variance_captured_test = sum(pca_test.explained_variance_ratio_)
+       
+    results[n_components_test] = {
+        'avg_r2': avg_r2_test,
+        'variance_captured': variance_captured_test,
+        'r2_scores': r2_scores_test
+    }
+       
+    print(f"   {n_components_test} PCs: Variance={variance_captured_test:.1%}, Avg R²={avg_r2_test:.3f}")
+ ```
+
+The results show that there is only a marginal improvement in R² after 3 PCs.
+
+
 #### **Trade-off Analysis:**
+
 | PCs | Variance Captured | Avg R² | Marginal Improvement |
 |-----|------------------|--------|---------------------|
 | 1   | 31.5%           | 0.086  | -                    |
@@ -316,8 +575,8 @@ Our comprehensive variance capture analysis reveals important insights:
 | 6   | 96.8%           | 0.191  | +0.004              |
 | 7   | 100.0%          | 0.192  | +0.001              |
 
-#### **What's in the "Lost" 33%?**
-The 33% not captured includes:
+#### **What's in the "Lost" 35%?**
+The 35% not captured includes:
 - **🔍 Idiosyncratic Factors**: Market-specific events (elections, natural disasters, company news)
 - **📊 Microstructure Effects**: Trading costs, liquidity constraints, market maker behavior
 - **🌍 Regional Factors**: Local economic conditions not captured by global macro factors
@@ -339,7 +598,7 @@ The 33% not captured includes:
 - **Taiwan (0.038)**: Needs additional factors
 - **Indonesia (0.045)**: Needs additional factors
 
-![Variance Capture Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/variance_capture_analysis.png)
+![Variance Capture Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/markdown_plots/variance_capture_analysis.png)
 
 *Figure: Comprehensive variance capture analysis showing the trade-off between dimensionality reduction and information loss. The 65% threshold represents an optimal balance between model simplicity and explanatory power.*
 
@@ -353,81 +612,22 @@ While PCA components are mathematical constructs, they often have intuitive econ
 
 ## Factor Model Results & Performance 📈
 
-### Enhanced Variable Separation & Data Processing
-
-Our updated implementation includes improved data handling and variable separation:
+We have now condensed a large set of macroeconomic variables into three principal components, which represent the dominant global risk factors. For each emerging market equity index, we then run a simple linear regression of its returns on these components to measure how strongly it is exposed to each factor represented by the model. The estimated sensitivities (betas) capture the market’s responsiveness to shifts in global conditions, while the R² statistic tells us how much of the market’s movement is explained by the model. This framework allows us to separate broad macro influences from local, idiosyncratic drivers of returns.
 
 ```python
-# Enhanced variable separation for expanded universe
-em_prefixes = (
-    "Brazil", "India", "China", "SouthAfrica",
-    "Mexico", "Indonesia", "Taiwan", "Korea", "US"
-)
-
-# Exclude specific columns to avoid conflicts
-exclude = {"USD_Index", "US_10Y_Yield", "US_2Y_Yield"}
-
-# Create EM columns dynamically
-em_columns = [
-    col for col in df.columns
-    if col.startswith(em_prefixes)
-    and col not in exclude
-]
-Y = log_returns[em_columns]
-
-# Define macro factor columns systematically
-macro_columns = [
-    col for col in df.columns 
-    if col.startswith(('USD_Index', 'Oil_Brent', 'US_10Y_Yield', 
-                      'US_2Y_Yield', 'VIX', 'BAA_spread', 'Term_Spread'))
-]
-X = log_returns[macro_columns]
-
-print(f"📊 Enhanced Model Setup:")
-print(f"   • Y matrix (EM returns): {Y.shape}")
-print(f"   • X matrix (Macro factors): {X.shape}")
-```
-
-### PCA Implementation with Enhanced Visualization
-
-```python
-# Standardize macro factors for PCA
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-
-# Apply PCA to extract 3 principal components
-n_components = 3
-pca = PCA(n_components=n_components)
-X_pca = pca.fit_transform(X_scaled)
-
-# Enhanced explained variance analysis
-explained_var = pca.explained_variance_ratio_
-cumulative_var = np.cumsum(explained_var)
-
-print(f"🔍 Enhanced PCA Results:")
-for i in range(n_components):
-    print(f"   • PC{i+1}: {explained_var[i]:.1%} variance explained")
-print(f"   • Total: {cumulative_var[-1]:.1%} variance captured")
-```
-
-![PCA Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/markdown_plots/pca_analysis.png)
-
-*Figure: Principal Component Analysis showing individual and cumulative explained variance. The first three components capture over 85% of the macro factor variance, providing an efficient dimensionality reduction.*
-
-### Comprehensive Factor Regression Implementation
-
-```python
-# Enhanced factor regression with improved error handling
+# =============================================================================
+# STEP 0: RUN REGRESSION ANALYSIS FOR EACH EM MARKET 
+# =============================================================================
 betas = {}       # Store factor loadings (sensitivities)
 r2_scores = {}   # Store model fit statistics
 
-print(f"🔄 Fitting {len(Y.columns)} enhanced regression models...")
+print(f"🔄 Fitting {len(Y.columns)} regression models...\n")
 
 for col in Y.columns:
-    # Fit enhanced regression: EM_return = α + β₁×PC1 + β₂×PC2 + β₃×PC3 + ε
+    # Fit regression: EM_return = α + β₁×PC1 + β₂×PC2 + β₃×PC3 + ε
     model = LinearRegression().fit(X_pca, Y[col])
     
-    # Store comprehensive results
+    # Store results
     betas[col] = model.coef_
     r2_scores[col] = model.score(X_pca, Y[col])
     
@@ -435,40 +635,74 @@ for col in Y.columns:
     print(f"   • R² Score: {r2_scores[col]:.3f}")
     print(f"   • Factor Loadings: [{betas[col][0]:.3f}, {betas[col][1]:.3f}, {betas[col][2]:.3f}]")
 
-# Create comprehensive factor loadings DataFrame
+# Create DataFrame for factor loadings (betas)
 beta_df = pd.DataFrame(betas, index=['PC1', 'PC2', 'PC3']).T
 beta_df.index.name = 'EM Index'
+
+print(f"\n📊 Factor Loadings Matrix:")
+print(beta_df.round(3))
 ```
 
-![Factor Model R² Scores](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/markdown_plots/factor_model_r2_scores.png)
-
-*Figure: Factor loadings heatmap showing how each EM market responds to the three principal components. Red indicates positive sensitivity, blue indicates negative sensitivity.*
-
-### Enhanced Model Performance Analysis
-
-Our comprehensive analysis reveals significant variation in macro factor sensitivity across the expanded EM universe:
-
-![Enhanced R² Scores by Market](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/r2_scores_by_em_index.png)
+![Factor Model R² Scores](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/markdown_plots/EM_model_fit.png)
 
 *Figure: Model fit (R²) for each EM market, showing the proportion of returns explained by macro factors. Higher R² indicates greater integration with global macro conditions.*
 
-### Enhanced Yearly Analysis: Factor Sensitivity Evolution
+### High Macro Sensitivity Markets
 
-One of the most significant enhancements in our factor model is the **comprehensive yearly analysis** that examines how EM-macro relationships evolved across distinct market periods. This analysis provides crucial insights for dynamic investment strategies.
+- **US (R² = 0.51)** – Returns are strongly explained by global macro factors, highlighting the central role of US rates, the dollar, and volatility in driving performance.
+- **Mexico (R² = 0.26)** – Highly sensitive to external factors, likely reflecting close trade integration with the US and reliance on manufacturing exports.
 
-#### Analysis Framework: Multi-Period Approach
+#### Moderate Macro Sensitivity
 
-Our enhanced temporal analysis covers three critical market periods:
+- **Brazil (R² = 0.23)** – Macro factors explain a meaningful share, but domestic politics and local market dynamics still play a major role.
+- **South Africa (R² = 0.17)** – Moderately sensitive, consistent with reliance on global capital flows and resource exports, but with significant idiosyncratic drivers.
+
+#### Lower Macro Sensitivity
+
+- **China (R² = 0.10)**  – Weak link to global macro factors, reflecting the dominance of domestic policy and a managed financial system.
+- **India (R² = 0.087)** – Returns are more insulated from global swings, driven instead by domestic growth dynamics and policy choices.
+- **Korea (R² = 0.063)** – Limited explanatory power, despite being export-oriented, likely due to advanced domestic drivers and technology leadership.
+- **Indonesia (R² = 0.045)** – Low sensitivity, shaped more by local commodity cycles and regional influences than global macro trends.
+- **Taiwan (R² = 0.038)** – The least explained by global factors, reflecting the dominance of its semiconductor industry and strong domestic fundamentals.
+
+## Enhanced Yearly Analysis: Factor Sensitivity Evolution
+
+The relationship between global macro factors and equity market returns changes over time. Over the last three years, several important regime changes have occurred:
+#### **2022/2023: Post-Pandemic Recovery Phase**
+
+- **Market Context**: Global economic reopening with elevated inflation concerns
+- **Policy Environment**: Central bank policy normalization beginning
+- **EM Characteristics**: Commodity-driven recovery with significant macro sensitivity
+- **Average Factor Sensitivity**: High integration period with strong macro correlations
+
+#### **2023/2024: Central Bank Tightening Cycle**
+
+- **Market Context**: Aggressive monetary policy tightening globally
+- **Policy Environment**: Interest rate hiking cycles and geopolitical tensions
+- **EM Characteristics**: Differentiated responses based on domestic policy space
+- **Average Factor Sensitivity**: Policy divergence creating varied factor loadings
+
+#### **2024/2025: Normalization and New Equilibrium**
+
+- **Market Context**: Rate peak expectations and new market equilibrium formation
+- **Policy Environment**: Transition to data-dependent policy adjustments
+- **EM Characteristics**: Evolving factor structures with selective decoupling
+- **Average Factor Sensitivity**: Moderate integration with regime-dependent patterns
+
+To explore how these regime shifts have impacted markets we run the same analysis for the three disting periods. 
 
 ```python
-# Define comprehensive yearly analysis periods
+# =============================================================================
+# STEP 0: DEFINE PERIODS FOR ANALYSIS 
+# =============================================================================
 yearly_periods = {
     '2022/2023': ('2022-01-01', '2023-12-31'),  # Post-COVID recovery, inflation concerns
     '2023/2024': ('2023-01-01', '2024-12-31'),  # Central bank policy normalization
     '2024/2025': ('2024-01-01', '2025-08-06')   # Current market regime
 }
-
-# Enhanced analysis loop with robust error handling
+# =============================================================================
+# STEP 1: RUN REGRESSION ANALYSIS FOR EACH PERIOD    
+# =============================================================================
 for period_name, (start_date, end_date) in yearly_periods.items():
     print(f"🗓️  Analyzing {period_name} Period")
     
@@ -496,164 +730,14 @@ for period_name, (start_date, end_date) in yearly_periods.items():
 
 _Figure: Evolution of factor sensitivities across the three analysis periods, showing how macro integration changed over time for each EM market._
 
-#### Enhanced Yearly Results & Market Characterization
+## Rolling Window Analysis: Dynamic Factor Relationships
 
-Our comprehensive analysis reveals distinct patterns in factor sensitivity evolution:
+To explore the evolution of factor sensitivities and how they have changed over time, we have employed a rolling window analysis where we recalculate principle components and associated regressions to see how the R² score evolves. 
+📈 Rolling R² Analysis Results:
+ - Window Size: 60 trading days
+ - Analysis Period: 06/10/2015 to 06/08/2025
+ - Total observations: 3593
 
-![Yearly R² Evolution Heatmap](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/yearly_r2_heatmap.png)
-
-_Figure: Heatmap showing R² scores across periods and markets. Color intensity indicates level of macro integration, with patterns revealing structural changes in global market relationships._
-
-#### Market Stability Analysis
-
-The enhanced framework includes sophisticated stability metrics:
-
-```python
-# Enhanced market stability analysis
-r2_std = yearly_r2_df.std(axis=1, skipna=True)
-r2_mean = yearly_r2_df.mean(axis=1, skipna=True)
-
-print("🎯 ENHANCED MARKET STABILITY ANALYSIS:")
-print("Most Stable Factor Sensitivity (lowest R² volatility):")
-for market in r2_std.nsmallest(3).index:
-    print(f"   🟢 {market}: Mean R² = {r2_mean[market]:.3f}, Volatility = {r2_std[market]:.3f}")
-
-print("Most Variable Factor Sensitivity (highest R² volatility):")
-for market in r2_std.nlargest(3).index:
-    print(f"   🔴 {market}: Mean R² = {r2_mean[market]:.3f}, Volatility = {r2_std[market]:.3f}")
-```
-
-![Executive Dashboard](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/yearly_executive_dashboard.png)
-
-_Figure: Executive dashboard providing comprehensive view of yearly factor evolution, including stability metrics, period characterization, and investment implications._
-
-#### Dynamic Strategy Recommendations
-
-The enhanced analysis provides actionable investment insights:
-
-- **🔄 Quarterly Rebalancing**: Based on regime changes and factor loading evolution
-- **🎯 High-Sensitivity Markets**: Use for macro momentum strategies during integration periods
-- **🛡️ Low-Sensitivity Markets**: Leverage for diversification during volatile periods
-- **📊 Dynamic Hedging**: Implement based on current period factor loadings
-- **📈 Trend Monitoring**: Distinguish temporary vs permanent sensitivity shifts
-Our regression analysis reveals significant variation in how well macro factors explain EM equity returns:
-
-#### High Macro Sensitivity Markets
-- **US**: Highest sensitivity (R² = 0.529) well-explained by macro factors
-- **Mexico**: High sensitivity (R² = 0.268) driven by US trade integration and manufacturing links
-
-#### Moderate Macro Sensitivity
-- **Brazil**: Moderate sensitivity (R² = 0.247) suggesting some domestic factors but good macro integration
-- **South Africa**: Moderate sensitivity (R² = 0.166) reflecting capital flow dependence and resource exports
-- **China**: Moderate sensitivity (R² = 0.104) with balanced domestic policy vs. global integration
-- **India**: Moderate sensitivity (R² = 0.087) indicating some domestic economic drivers
-
-#### Lower Macro Sensitivity
-- **Korea**: Lower sensitivity (R² = 0.063) due to export-oriented advanced economy
-- **Indonesia**: Lower sensitivity (R² = 0.045) reflecting commodity exports and regional dynamics
-- **Taiwan**: Lowest sensitivity (R² = 0.038) from technology sector with strong domestic factors
-
-### Statistical Significance
-- **R² Range**: 0.038 - 0.529 across EM markets (moderate explanatory power)
-- **Factor Loadings**: Statistically significant relationships identified for principal components
-- **Model Stability**: Consistent results across time periods showing systematic macro exposure
-- **Economic Interpretation**: Lower R² values suggest EM markets retain significant idiosyncratic risk
-
-## Advanced Visualizations & Analysis 📊
-
-Our comprehensive visualization framework provides multiple analytical perspectives on EM-macro relationships using real data from July 2022 to present:
-
-### 1. Emerging Markets Performance Evolution
-
-![EM Index Performance](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/markdown_plots/em_index_performance.png)
-
-**Performance Insights:**
-- **Regional Divergence**: Clear differentiation between EM regions over the analysis period
-- **Volatility Patterns**: Distinct risk profiles across different emerging economies  
-- **Correlation Dynamics**: Varying co-movement patterns suggest diversification opportunities
-
-### 2. Macroeconomic Factors Evolution
-
-![Macro Factors Evolution](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/markdown_plots/macro_factors_evolution.png)
-
-**Factor Analysis:**
-- **Dollar Strength Cycles**: USD Index shows clear trending periods affecting EM flows
-- **Interest Rate Regime**: Fed policy and yield movements drive capital allocation decisions
-- **Risk Sentiment Dynamics**: VIX spikes correspond to EM market stress periods
-- **Commodity Price Impact**: Oil and copper cycles reflect global growth expectations
-
-### 3. Correlation Structure Analysis
-
-![Correlation Heatmap](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/markdown_plots/correlation_heatmap.png)
-
-**Key Correlation Insights:**
-- **USD Sensitivity**: All EM markets show negative correlation with dollar strength
-- **Volatility Impact**: VIX demonstrates strong negative correlation across EM regions
-- **Commodity Differentiation**: Resource exporters vs. importers show opposite correlations
-- **Regional Patterns**: Geographic proximity creates similar correlation structures
-
-### 4. Principal Component Analysis Results
-
-![PCA Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/markdown_plots/pca_analysis.png)
-
-**PCA Findings:**
-- **Dimensionality Reduction**: First 3 components capture ~85-90% of macro factor variance
-- **Factor Concentration**: PC1 dominates with ~45-50% explained variance
-- **Efficient Representation**: Substantial noise reduction while preserving signal
-
-### 5. Factor Model Performance Comparison
-
-![Factor Model R² Scores](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/markdown_plots/factor_model_r2_scores.png)
-
-**Enhanced Model Performance Analysis:**
-- **South Africa (MXZA)**: Highest macro sensitivity (R² = 0.398) reflecting capital flow dependence and resource exports
-- **Mexico (MXMX)**: Moderate-high sensitivity (R² = 0.208) driven by US trade integration and manufacturing links
-- **China (MXCN)**: Moderate sensitivity (R² = 0.203) due to balanced domestic policy vs. global integration
-- **Indonesia (MXID)**: Moderate sensitivity (R² = 0.195) reflecting commodity exports and regional dynamics
-- **Taiwan (TAMSCI)**: Moderate sensitivity (R² = 0.187) from technology sector global integration
-- **Korea (MXKR)**: Moderate sensitivity (R² = 0.182) due to export-oriented advanced economy
-- **Brazil (MXBR)**: Lower sensitivity (R² = 0.171) despite commodity exposure, suggesting domestic factors dominate
-- **India (MXIN)**: Lowest EM sensitivity (R² = 0.161) indicating strong domestic economic drivers
-- **US (MXUS)**: Benchmark reference (R² = 0.156) for developed market comparison
-
-### 6. Individual Market Analysis: Enhanced Country-Specific Insights
-
-Our enhanced framework provides detailed analysis for each market, showing actual vs. predicted returns and factor sensitivity patterns:
-
-![Brazil Individual Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/Brazil.png)
-
-_Figure: Brazil (MXBR) individual market analysis showing actual vs. predicted returns from our enhanced factor model._
-
-![China Individual Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/China.png)
-
-_Figure: China (MXCN) factor model validation, demonstrating the model's ability to capture major market movements._
-
-![India Individual Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/India.png)
-
-_Figure: India (MXIN) shows the lowest macro sensitivity, indicating strong domestic economic drivers._
-
-![South Africa Individual Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/SouthAfrica.png)
-
-_Figure: South Africa (MXZA) demonstrates the highest macro sensitivity, reflecting capital flow dependence._
-
-### 7. Rolling Window Analysis: Dynamic Factor Relationships
-
-Our enhanced rolling window analysis tracks how factor relationships evolve over time:
-
-![Rolling R² Comparison](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_all_indices_comparison.png)
-
-_Figure: Comprehensive rolling R² analysis for all EM indices, showing time-varying sensitivity to macro factors and regime changes._
-
-**Model Validation Results:**
-- **Strong Predictive Power**: Factor model captures major market movements effectively
-- **Crisis Response**: Enhanced sensitivity during stress periods visible in residuals
-- **Systematic Patterns**: No obvious bias in prediction errors across time periods
-
-## Rolling Window Analysis: Dynamic Factor Sensitivity 🔄
-
-### Advanced Rolling Analysis Implementation
-
-Our sophisticated rolling window analysis tracks how factor relationships evolve over time:
 
 ```python
 def rolling_r2_scores(X, Y, window=60, n_components=3):
@@ -762,262 +846,63 @@ print(f"Results shape: {rolling_r2_df.shape}")
 print(f"Date range: {rolling_r2_df.index.min()} to {rolling_r2_df.index.max()}")
 ```
 
-### Time-Varying Relationships
-Our rolling 60-day window analysis reveals that EM-macro relationships are not static:
+### 📊 Rolling R² Summary Statistics
+
+| Stat | Brazil | India | China | South Africa | Mexico | Indonesia | Taiwan | Korea | US |
+|------|--------|-------|-------|--------------|--------|-----------|--------|-------|----|
+| **mean**  | 0.270    | 0.133    | 0.174    | 0.207       | 0.309    | 0.099     | 0.109    | 0.116    | 0.597 |
+| **std**   | 0.149    | 0.112    | 0.109    | 0.126       | 0.144    | 0.090     | 0.086    | 0.092    | 0.133 |
+| **min**   | 0.005    | 0.000    | 0.001    | 0.001       | 0.019    | 0.000     | 0.000    | 0.000    | 0.128 |
+| **25%**   | 0.151    | 0.050    | 0.095    | 0.106       | 0.195    | 0.037     | 0.044    | 0.050    | 0.542 |
+| **50%**   | 0.245    | 0.097    | 0.160    | 0.191       | 0.298    | 0.071     | 0.081    | 0.091    | 0.621 |
+| **75%**   | 0.363    | 0.188    | 0.230    | 0.293       | 0.409    | 0.133     | 0.161    | 0.160    | 0.688 |
+| **max**   | 0.772    | 0.688    | 0.676    | 0.746       | 0.858    | 0.650     | 0.491    | 0.595    | 0.896 |  
+
+### Time-Varying Relationships for Each EM Index
+![China Rolling R²](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_China.png)
+*Figure: Rolling R² for China equity returns explained by macro factors using a 60-day PCA regression window.*
+
+![Indonesia Rolling R²](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_Indonesia.png)
+*Figure: Rolling R² for Indonesia equity returns explained by macro factors using a 60-day PCA regression window.*
+
+![Korea Rolling R²](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_Korea.png)
+*Figure: Rolling R² for Korea equity returns explained by macro factors using a 60-day PCA regression window.*
+
+![Mexico Rolling R²](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_Mexico.png)
+*Figure: Rolling R² for Mexico equity returns explained by macro factors using a 60-day PCA regression window.*
+
+![South Africa Rolling R²](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_SouthAfrica.png)
+*Figure: Rolling R² for South Africa equity returns explained by macro factors using a 60-day PCA regression window.*
+
+![Taiwan Rolling R²](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_Taiwan.png)
+*Figure: Rolling R² for Taiwan equity returns explained by macro factors using a 60-day PCA regression window.*
+
+![India Rolling R²](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_India.png)
+*Figure: Rolling R² for India equity returns explained by macro factors using a 60-day PCA regression window.*
+
+![Brazil Rolling R²](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_Brazil.png)
+*Figure: Rolling R² for Brazil equity returns explained by macro factors using a 60-day PCA regression window.*
+
+![US Rolling R²](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_US.png)
+*Figure: Rolling R² for US equity returns explained by macro factors using a 60-day PCA regression window.*
+
+### All EM Indices Comparison
 
 ![Rolling R² Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_all_indices_comparison.png)
 
-### Key Findings from Rolling Analysis:
+## 📈 Rolling R² Insights Across Emerging Markets
 
-#### **Crisis Sensitivity Patterns:**
-- **Higher R² during stress**: EM markets become more correlated with global factors during crises
-- **Regime Changes**: Clear structural breaks visible during major market events
-- **Recovery Dynamics**: Gradual return to "normal" sensitivity levels post-crisis
-
-#### **Secular Trends:**
-- **Increasing Integration**: Some EM markets show rising macro sensitivity over time
-- **Policy Impacts**: Central bank interventions visible as temporary sensitivity changes
-- **Seasonal Effects**: Potential quarterly patterns in factor relationships
-
-### Practical Applications
-
-#### **Risk Management:**
-```python
-# Monitor current factor exposure
-current_exposure = latest_factor_loadings @ current_macro_outlook
-risk_contribution = exposure_variance @ factor_covariance_matrix
-```
-
-#### **Portfolio Optimization:**
-- **Timing Strategies**: Increase EM allocation when macro sensitivity is low
-- **Hedging Decisions**: Use factor loadings to construct macro hedges
-- **Diversification**: Combine EM markets with different factor exposures
-
-## Implementation Architecture 🛠️
-
-### Professional Code Structure
-```python
-def rolling_r2_scores(X, Y, window=60, n_components=3):
-    """
-    Calculate rolling R² scores for EM indices using PCA-based factor models.
-    
-    Features:
-    - Robust error handling for numerical issues
-    - Progress tracking for long computations
-    - Configurable PCA components and window sizes
-    - Professional documentation
-    """
-    # Implementation details...
-```
-
-### Key Technical Features:
-
-- **Modular Design**: Reusable functions for different analyses
-- **Error Handling**: Robust numerical computation with fallback methods
-- **Performance Optimization**: Efficient matrix operations and memory management
-- **Professional Visualization**: Publication-quality charts with consistent styling
-
-## Business Value & Applications 💼
-
-### **Investment Management**
-1. **Strategic Asset Allocation**: Optimize EM weights based on macro outlook
-2. **Tactical Positioning**: Time EM exposure using rolling sensitivity analysis
-3. **Risk Budgeting**: Allocate risk capital based on factor exposures
-4. **Performance Attribution**: Decompose returns into factor contributions
-
-### **Risk Management**
-1. **Stress Testing**: Model EM portfolio response to macro scenarios
-2. **Hedging Strategies**: Design factor-based hedges for EM exposure
-3. **Correlation Monitoring**: Track changing relationships for risk models
-4. **Early Warning**: Identify regime changes through rolling analysis
-
-### **Research & Strategy**
-1. **Market Structure Analysis**: Understand EM integration with global markets
-2. **Policy Impact Assessment**: Quantify effects of monetary/fiscal policy
-3. **Comparative Analysis**: Benchmark different EM markets
-4. **Academic Research**: Contribute to factor model literature
-
-## Key Results & Insights 📋
-
-### **Real Data Analysis Results (July 2022 - August 2025):**
-
-Our comprehensive analysis of 1,099 daily observations reveals significant insights into EM-macro relationships:
-
-#### **Dataset Characteristics:**
-- **Observation Period**: 10-year lookback for statistical robustness (daily data)
-- **Geographic Coverage**: 8 major EM regions + 1 DM benchmark representing $3+ trillion in market cap
-- **Enhanced Macro Factor Universe**: 8 key indicators covering monetary policy, commodities, volatility, credit, and yield curve dynamics
-- **Data Quality**: Professional-grade Bloomberg data with forward-fill processing
-
-#### **Enhanced Quantitative Performance Metrics:**
-```python
-# Enhanced factor model performance results from our analysis:
-factor_model_results = {
-    'US_MXUS': {'R²': 0.529, 'Primary_Drivers': ['USD_Strength', 'VIX', 'Yield_Curve', 'Credit_Spreads']},
-    'Mexico_MXMX': {'R²': 0.268, 'Primary_Drivers': ['USD_Strength', 'Term_Spread', 'Trade_Sentiment', 'Fed_Policy']},
-    'Brazil_MXBR': {'R²': 0.247, 'Primary_Drivers': ['USD_Strength', 'Oil_Prices', 'Term_Spread', 'Domestic_Policy']},
-    'SouthAfrica_MXZA': {'R²': 0.166, 'Primary_Drivers': ['USD_Strength', 'VIX', 'Copper_Prices', 'Credit_Spreads']},
-    'China_MXCN': {'R²': 0.104, 'Primary_Drivers': ['Trade_Policy', 'USD_Strength', 'Yield_Curve', 'Commodity_Cycle']},
-    'India_MXIN': {'R²': 0.087, 'Primary_Drivers': ['Oil_Prices', 'Fed_Policy', 'Risk_Sentiment', 'Domestic_Growth']},
-    'Korea_MXKR': {'R²': 0.063, 'Primary_Drivers': ['Export_Demand', 'USD_Strength', 'Policy_Rates', 'Global_Growth']},
-    'Indonesia_MXID': {'R²': 0.045, 'Primary_Drivers': ['USD_Strength', 'Commodity_Cycle', 'VIX', 'Credit_Conditions']},
-    'Taiwan_TAMSCI': {'R²': 0.038, 'Primary_Drivers': ['Tech_Demand', 'USD_Strength', 'Yield_Environment', 'Risk_Sentiment']}
-}
-
-# Enhanced portfolio correlation analysis
-average_em_macro_correlation = 0.217  # Moderate systematic relationship with expanded universe
-crisis_period_correlation = 0.345     # Increased integration during stress periods
-regional_diversification_benefit = 0.23  # Asia Pacific vs Latin America vs Africa correlation differential
-```
-
-#### **Statistical Significance Testing:**
-- **F-Statistics**: All factor models significant at p < 0.001 level
-- **Individual Coefficients**: 89% of factor loadings statistically significant (p < 0.05)
-- **Model Stability**: Consistent results across 12-month rolling windows
-- **Durbin-Watson Statistics**: No significant autocorrelation in residuals
-
-### **Enhanced Quantitative Findings:**
-- **Macro Sensitivity Range**: R² from 0.038 (Taiwan) to 0.529 (US) across 9 markets
-- **Enhanced Factor Concentration**: ~65% of macro variance in 3 principal components from 7 factors
-- **Temporal Evolution**: Significant regime-dependent changes across 2022-2025 periods
-- **Regional Patterns**: Asia Pacific (5 markets) vs Latin America (2 markets) vs Africa (1 market) show distinct clusters
-- **Benchmark Integration**: US provides developed market reference point for relative analysis
-
-### **Economic Insights:**
-- **USD Dominance**: Dollar strength consistently impacts all EM markets negatively
-- **Volatility Transmission**: VIX strongly predicts EM performance during stress
-- **Commodity Differentiation**: Resource exporters vs. importers show opposite oil sensitivity
-- **Policy Independence**: Capital controls and domestic policy reduce macro sensitivity
-
-### **Investment Implications:**
-- **Diversification Value**: Different factor loadings create portfolio benefits
-- **Timing Opportunities**: Rolling analysis identifies optimal entry/exit points
-- **Risk Management**: Factor models enable sophisticated hedging strategies
-- **Market Selection**: Fundamental understanding guides country/region allocation
-
-## Technical Deep Dive: Algorithm Performance 🔬
-
-### **Recent Technical Improvements:**
-
-#### **Code Quality Enhancements:**
-- **Fixed Deprecated Syntax**: Updated all `fillna(method='ffill')` calls to modern `.ffill()` syntax
-- **Enhanced Error Handling**: Improved robustness for numerical computations
-- **Data Validation**: Added comprehensive checks for negative values and data quality
-- **Term Spread Engineering**: Implemented additive shift to handle negative values for log transformation
-
-#### **Feature Engineering Improvements:**
-```python
-# Enhanced Term Spread handling to avoid log transformation issues
-shift_value = 1.1813  # Based on minimum value analysis
-df['Term_Spread_Engineered'] = df['Term_Spread'] + shift_value
-
-# Benefits:
-# • Eliminates RuntimeWarnings from log calculations
-# • Preserves economic meaning of yield curve slope
-# • Improves PCA by including Term_Spread information
-# • Maintains relative relationships for factor modeling
-```
-
-#### **Data Quality Enhancements:**
-- **Negative Value Handling**: Robust processing of negative Term Spread values
-- **Missing Data Management**: Improved forward-fill methodology
-- **Infinite Value Filtering**: Enhanced log returns calculation with proper error handling
-- **Standardization**: Consistent scaling across all macro factors
-
-### **Computational Efficiency:**
-- **PCA Speed**: Efficient matrix decomposition for 7×7 factor universe
-- **Rolling Computation**: Optimized window calculations for 60-day periods
-- **Memory Management**: Efficient storage for 3+ years of daily data
-- **Parallel Processing**: Potential for multi-core optimization
-
-### **Statistical Robustness:**
-- **Cross-Validation**: Time-series aware validation techniques
-- **Stability Testing**: Parameter consistency across different periods
-- **Sensitivity Analysis**: Robust to different window sizes and PCA components
-- **Model Diagnostics**: Comprehensive residual and fit analysis
-
-### **Scalability Considerations:**
-- **Extended Universe**: Framework scales to additional EM markets
-- **Factor Expansion**: Easy integration of new macro variables
-- **Frequency Options**: Adaptable to weekly/monthly analysis
-- **Real-Time Updates**: Structure supports live factor monitoring
-
-## Temporal Analysis: Factor Evolution Across Market Regimes 📈
-
-One of the most significant enhancements to our factor model is the **temporal analysis** component, which examines how EM-macro relationships evolved across three distinct annual periods. This analysis reveals critical insights for dynamic investment strategies.
-
-### **Analysis Framework: Three-Period Approach**
-
-Our temporal analysis covers three crucial market periods:
-
-#### **2022/2023: Post-Pandemic Recovery Phase**
-
-- **Market Context**: Global economic reopening with elevated inflation concerns
-- **Policy Environment**: Central bank policy normalization beginning
-- **EM Characteristics**: Commodity-driven recovery with significant macro sensitivity
-- **Average Factor Sensitivity**: High integration period with strong macro correlations
-
-#### **2023/2024: Central Bank Tightening Cycle**
-
-- **Market Context**: Aggressive monetary policy tightening globally
-- **Policy Environment**: Interest rate hiking cycles and geopolitical tensions
-- **EM Characteristics**: Differentiated responses based on domestic policy space
-- **Average Factor Sensitivity**: Policy divergence creating varied factor loadings
-
-#### **2024/2025: Normalization and New Equilibrium**
-
-- **Market Context**: Rate peak expectations and new market equilibrium formation
-- **Policy Environment**: Transition to data-dependent policy adjustments
-- **EM Characteristics**: Evolving factor structures with selective decoupling
-- **Average Factor Sensitivity**: Moderate integration with regime-dependent patterns
-
-### **Key Temporal Findings**
-
-#### **Market-Specific Evolution:**
-
-```python
-# Enhanced Temporal Analysis Results (R² Scores by Period)
-yearly_results = {
-    'US':           {'2022/23': 0.583, '2023/24': 0.566, '2024/25': 0.495},
-    'Mexico':       {'2022/23': 0.323, '2023/24': 0.197, '2024/25': 0.260},
-    'Brazil':       {'2022/23': 0.190, '2023/24': 0.174, '2024/25': 0.227},
-    'South Africa': {'2022/23': 0.176, '2023/24': 0.146, '2024/25': 0.167},
-    'China':        {'2022/23': 0.083, '2023/24': 0.056, '2024/25': 0.092},
-    'India':        {'2022/23': 0.073, '2023/24': 0.030, '2024/25': 0.079},
-    'Korea':        {'2022/23': 0.045, '2023/24': 0.037, '2024/25': 0.059},
-    'Indonesia':    {'2022/23': 0.026, '2023/24': 0.028, '2024/25': 0.042},
-    'Taiwan':       {'2022/23': 0.045, '2023/24': 0.028, '2024/25': 0.036}
-}
-```
-
-#### **Trend Classification:**
-
-| Market | Temporal Trend | Investment Implication |
-|--------|----------------|----------------------|
-| **South Africa** 🔗 | **High Integration** (Stable ~0.40 R²) | Best for systematic factor strategies |
-| **Mexico** ↗️ | **Moderate Integration** (Stable ~0.21 R²) | Balanced factor exposure with good liquidity |
-| **China** ↘️ | **Variable Integration** (0.20 ± 0.01 R²) | Regime-dependent factor sensitivity |
-| **Indonesia** ➡️ | **Stable Integration** (0.19 ± 0.01 R²) | Consistent moderate factor exposure |
-| **Taiwan** � | **Tech Integration** (Stable ~0.19 R²) | Technology sector global linkages |
-| **Korea** 📊 | **Export Integration** (Stable ~0.18 R²) | Advanced EM with developed market characteristics |
-| **Brazil** 📈 | **Moderate Integration** (Stable ~0.17 R²) | Domestic factors dominate despite commodity exposure |
-| **India** �️ | **Low Integration** (Stable ~0.16 R²) | Best diversification benefits, strong domestic drivers |
-| **US** 📌 | **Benchmark Reference** (Stable ~0.16 R²) | Developed market comparison baseline |
-
-### **Temporal Analysis Visualizations**
-
-The temporal analysis generates comprehensive visualizations showing how factor sensitivities evolved across the three annual periods. These charts reveal critical insights for dynamic investment strategies.
-
-**Key Visualization Components:**
-
-- **R² Evolution Timeline**: How factor sensitivity changed for each market across periods
-- **Period Heatmap**: Comparative matrix showing sensitivity levels by market and time
-- **Temporal Volatility Analysis**: Which markets showed the most stable vs variable factor relationships
-- **Executive Dashboard**: Comprehensive multi-panel analysis for strategic decision-making
-
-_Note: Run the enhanced notebooks (02, 03, and 04) to generate the complete temporal analysis visualization suite, including yearly factor evolution charts and executive dashboard panels._
-
-### **Strategic Investment Implications**
+### 🔑 Key Takeaways
+- **United States**: Macro factors explain a large share of returns (mean R² ≈ **0.60**), making it the most macro-sensitive market.  
+- **Mexico & Brazil**: Moderate sensitivity (mean R² ≈ **0.31** and **0.27**), consistent with trade and commodity linkages.  
+- **South Africa**: Noticeable macro influence (mean R² ≈ **0.21**), reflecting capital-flow and resource dependence.  
+- **China & India**: Lower sensitivity (mean R² ≈ **0.17** and **0.13**), pointing to stronger domestic policy and structural drivers.  
+- **Korea, Taiwan, Indonesia**: Weakest macro linkages (mean R² < **0.12**), likely driven by idiosyncratic or sector-specific dynamics.  
+- **Crisis periods**: Spikes in R² (e.g., 2020 COVID shock, 2018 Fed tightening) show markets moving in sync with global factors.  
+- **Calmer periods**: Macro influence fades; rolling R² drops sharply in several Asian markets outside of global stress.  
+- **Heterogeneity**: Mexico’s equity returns can be ~**1/3 explained** by macro, while Taiwan often sits near **0.10**.  
+- **Macro regimes matter**: Tightening cycles and commodity booms raise R² in resource-heavy EMs, less so in tech- or policy-driven economies.  
+- **Overall fit is modest**: Most EMs rarely exceed **R² = 0.40**, so local, sectoral, and policy forces remain crucial alongside macro.  
 
 #### **Dynamic Factor Allocation:**
 
@@ -1030,19 +915,6 @@ _Note: Run the enhanced notebooks (02, 03, and 04) to generate the complete temp
 - **Core Holdings**: Build around stable markets (US, Mexico) for consistent factor exposure
 - **Satellite Allocations**: Use variable markets (Brazil, South Africa) for tactical regime plays
 - **Diversification Benefits**: Taiwan and Indonesia provide best portfolio diversification
-- **Factor Timing**: Quarterly rebalancing based on rolling sensitivity analysis
-
-#### **Risk Management Framework:**
-
-```python
-# Dynamic Risk Management Recommendations
-risk_framework = {
-    'Monitoring_Frequency': 'Monthly factor sensitivity updates',
-    'Rebalancing_Trigger': 'R² changes >0.05 quarter-over-quarter',
-    'Hedge_Ratio_Updates': 'Quarterly based on current period loadings',
-    'Stress_Testing': 'Include all three temporal periods in scenarios'
-}
-```
 
 ### **Regime-Dependent Strategies**
 
@@ -1063,22 +935,6 @@ risk_framework = {
 - **Strategy**: Market-specific alpha generation opportunities
 - **Markets**: Individual country fundamentals dominate
 - **Risk Management**: Reduced macro hedging requirements
-
-## Professional Data Export & Reporting 📄
-
-Our implementation includes comprehensive output generation:
-
-### **Visualization Suite:**
-- **Individual Market Charts**: Detailed analysis for each EM index
-- **Comparative Analysis**: Side-by-side factor loading comparisons
-- **Time Series Plots**: Rolling R² and sensitivity evolution
-- **Summary Dashboards**: Executive-level overview charts
-
-### **Data Outputs:**
-- **CSV Exports**: Raw data for further analysis
-- **Excel Workbooks**: Multi-sheet analysis with embedded charts
-- **Statistical Reports**: Comprehensive model diagnostics
-- **API Integration**: JSON outputs for system integration
 
 ## Future Enhancements & Research Directions 🚀
 
@@ -1102,36 +958,34 @@ Our implementation includes comprehensive output generation:
 
 ## Conclusion & Business Impact 🎯
 
-This emerging markets factor model demonstrates how sophisticated data science techniques can create substantial business value in quantitative finance. The addition of **temporal analysis** across 2022-2025 periods provides unprecedented insights into the evolving nature of EM-macro relationships.
+This emerging markets macro factor model highlights the power of quantitative methods to bring structure and insight to complex global equity dynamics. By combining PCA with rolling regressions, we uncover how different markets respond to global macro forces — and when those relationships tighten or break down.
 
-### **Technical Achievement:**
+### 🔑 Key Insights
+- **Macro sensitivity is uneven**: The U.S., Mexico, and Brazil show strong macro linkages, while markets like Taiwan and India remain largely driven by local dynamics.  
+- **Macro regimes matter**: During global shocks (COVID, Fed tightening), R² values spike across EMs, showing that macro dominates in crisis. In calmer periods, domestic policy and sector composition take the driver’s seat.  
+- **Commodities and flows**: Resource-heavy economies (Brazil, South Africa) and trade-linked markets (Mexico) are more exposed to macro swings than tech-heavy exporters (Taiwan, Korea).  
+- **Limits of the model**: Even in high-sensitivity markets, macro explains only a portion of returns — reinforcing the importance of local research alongside top-down analysis.  
 
-- **Robust Framework**: Professional-grade implementation suitable for production use
-- **Comprehensive Analysis**: Multiple analytical perspectives on EM-macro relationships including temporal evolution
-- **Scalable Architecture**: Foundation for expanded research and applications
-- **Reproducible Research**: Well-documented, modular code for ongoing development
+### 📊 Business Value
+- **Risk Management**: Clearer visibility into which markets are most exposed to macro shocks helps managers size exposures and hedge intelligently.  
+- **Alpha Opportunities**: Timing strategies that exploit shifts in macro sensitivity (e.g., overweight Mexico in commodity upswings) can add incremental return.  
+- **Process Efficiency**: Automates what used to be a manual, qualitative judgment of “macro vs. local” drivers.  
+- **Strategic Positioning**: Offers a data-driven lens on EM integration, useful for long-term asset allocation and policy research.  
 
-### **Business Value Creation:**
+### 💡 Investment Philosophy
+At its core, this project shows how **data science translates complexity into clarity**. By reducing noisy market behavior into interpretable macro components, we build tools that are both rigorous and actionable.  
 
-- **Risk Reduction**: Better understanding of macro exposures enables proactive management
-- **Alpha Generation**: Factor timing strategies provide return enhancement opportunities
-- **Operational Efficiency**: Automated analysis replaces manual market assessment
-- **Strategic Insights**: Data-driven view of global market integration and temporal evolution
+For portfolio managers, it informs **where to lean on macro signals** and where to prioritize **bottom-up local expertise**.  
+For risk managers, it quantifies hidden exposures to global shocks.  
+For researchers, it provides a scalable framework for studying market integration across regions and cycles.  
 
-### **Investment Philosophy:**
+The modular design ensures the framework can:  
+- Extend to new markets and asset classes  
+- Adapt across different time horizons  
+- Integrate directly into existing investment processes  
+- Scale for enterprise-wide risk and allocation systems  
 
-The **factor model approach** provides a perfect example of how quantitative methods can enhance investment decision-making. By decomposing complex market relationships into interpretable components, we create a framework that's both analytically rigorous and practically useful.
-
-Whether you're a portfolio manager optimizing EM allocations, a risk manager monitoring global exposures, or a researcher studying market integration, this factor modeling approach provides a solid foundation for data-driven decision making.
-
-The modular design makes it easy to:
-
-- **Extend the analysis** to additional markets and factors
-- **Adapt the methodology** for different time horizons and objectives  
-- **Integrate the outputs** into existing investment processes
-- **Scale the framework** for enterprise-wide deployment
-
-I hope you found this deep dive into emerging markets factor modeling insightful and practical!
+👉 In short: **macro factor models won’t replace local insight — but they sharpen it, contextualize it, and make it more powerful.**
 
 ---
 
@@ -1150,9 +1004,7 @@ I hope you found this deep dive into emerging markets factor modeling insightful
   - [Variance Capture Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/variance_capture_analysis.png) - Detailed analysis of PCA variance capture and trade-offs
   - [Individual Market Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/Brazil.png) - Example: Brazil index factor sensitivity
   - [Enhanced Rolling R² Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_all_indices_comparison.png) - Dynamic sensitivity tracking across expanded universe
-  - [Regional Analysis Dashboard](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/markdown_plots/correlation_heatmap.png) - Geographic cluster analysis
-  - [Complete Enhanced Analysis Suite](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/markdown_plots/factor_model_r2_scores.png) - Enhanced factor model results overview
-
+ 
 **GitHub Repository**: [D-Cubed-Data-Lab/macro-factor-model-em](https://github.com/wilsonck75/D-Cubed-Data-Lab/tree/main/macro-factor-model-em)
 
 ### **Enhanced Performance Highlights**
@@ -1163,11 +1015,7 @@ I hope you found this deep dive into emerging markets factor modeling insightful
 - � **Regional Coverage**: Asia Pacific (5), Latin America (2), Africa (1), plus DM benchmark
 - �🎯 **Production Ready** framework for institutional portfolio management
 - 📊 **Highest Integration**: US (R² = 0.529) - well-explained by macro factors
-- 🛡️ **Best Diversification**: Taiwan (R² = 0.038) - lowest EM macro sensitivity
-- 🔗 **Technology Integration**: Taiwan (R² = 0.187) - semiconductor sector global linkages
-- 📌 **Advanced EM**: Korea (R² = 0.182) - developed market characteristics
-- 📈 **Enhanced Factors**: Term spread, credit spreads, and yield curve dynamics included
-- 🔧 **Technical Improvements**: Fixed deprecated syntax, enhanced error handling, and robust data validation
+- 🛡️ **Best Diversification**: Taiwan (R² = 0.038) - lowest Global macro sensitivity
 
 ---
 
