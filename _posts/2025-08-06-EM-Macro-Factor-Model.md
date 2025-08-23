@@ -401,7 +401,7 @@ print(f"\n📋 Log Returns Summary:")
 log_returns.describe().round(4)
 ```
 
- ### Variable Separation
+### Variable Separation
 
 Separate data into dependent and independent variables for principle component analysis.
 
