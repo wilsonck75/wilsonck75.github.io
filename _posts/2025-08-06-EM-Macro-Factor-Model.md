@@ -1007,15 +1007,6 @@ The modular design ensures the framework can:
  
 **GitHub Repository**: [D-Cubed-Data-Lab/macro-factor-model-em](https://github.com/wilsonck75/D-Cubed-Data-Lab/tree/main/macro-factor-model-em)
 
-### **Enhanced Performance Highlights**
-
-- 📊 **8 EM Markets + 1 DM Benchmark** analyzed with institutional-grade methodology
-- 🔍 **65% Variance** captured with 3 principal components from 7 enhanced macro factors
-- 📈 **Multi-Period Temporal** analysis across distinct market regimes (2022-2025)
-- � **Regional Coverage**: Asia Pacific (5), Latin America (2), Africa (1), plus DM benchmark
-- �🎯 **Production Ready** framework for institutional portfolio management
-- 📊 **Highest Integration**: US (R² = 0.529) - well-explained by macro factors
-- 🛡️ **Best Diversification**: Taiwan (R² = 0.038) - lowest Global macro sensitivity
 
 ---
 
