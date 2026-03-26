@@ -150,6 +150,10 @@ To determine how many macro components are actually useful, I compare the averag
 
 This is the cleanest model-selection result in the project. The jump from one to two PCs matters. The jump from two to three still helps. After that, the marginal gain in average explanatory power is small. That makes **three PCs** a sensible compromise between interpretability and performance.
 
+![Variance Capture Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/variance_capture_analysis.png)
+
+*Figure: Variance captured by successive principal components and the trade-off against average model fit. Three components preserve most of the signal without making the model much harder to interpret.*
+
 ## Interpreting the Top 3 Macro Factors
 
 ### PC1: Rates and Broad Financing Conditions
@@ -198,6 +202,22 @@ Using the three-factor specification, I regress each market’s daily returns on
 
 That cross-section lines up with market structure. Brazil and Mexico are more exposed to commodities, external financing conditions, and global risk appetite. Several Asian markets, by contrast, retain stronger domestic-policy and sector-specific drivers that dilute pure macro transmission.
 
+![Factor Model R² Scores](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/markdown_plots/EM_model_fit.png)
+
+*Figure: Full-sample model fit by market. Higher `R²` means a larger share of that market's daily return variation is explained by the macro factor model.*
+
+## Regime Shifts Across Recent Periods
+
+The full-sample results are useful, but the story changes across regimes. The model behaved differently during post-COVID reopening, the global tightening cycle, and the more recent normalization period:
+
+- **2022/2023:** reopening and inflation pressure kept macro sensitivity elevated
+- **2023/2024:** aggressive tightening and policy divergence created more differentiated country responses
+- **2024/2025:** markets began settling into a new equilibrium, with selective decoupling across EMs
+
+![Yearly Factor Evolution Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/yearly_factor_evolution.png)
+
+*Figure: Evolution of factor sensitivity across recent periods, showing that macro integration is not static and can shift meaningfully from one regime to the next.*
+
 ## Rolling Regression Analysis
 
 The static regression is useful, but the rolling analysis is where the model becomes much more interesting.
@@ -237,6 +257,10 @@ The time variation is the core insight of the project:
 
 This is why I think the model is more useful as a **regime detector** than as a constant forecasting tool. It helps identify *when* EM markets are trading like macro assets rather than simply assuming they always do.
 
+![Rolling R² Analysis](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_all_indices_comparison.png)
+
+*Figure: Rolling `R²` comparison across markets using a 60-day window. Crisis periods create obvious spikes in macro co-movement, while calmer periods show much weaker common-factor influence.*
+
 ## Why This Matters
 
 This framework is helpful for several practical questions:
@@ -266,3 +290,17 @@ There are several natural extensions to this work:
 - replace static linear regressions with regime-switching or state-dependent models
 
 But even in its current form, the model provides a solid bridge between quantitative rigor and market intuition: it turns a messy global macro backdrop into a smaller, interpretable set of factors and shows when those factors really matter.
+
+## Data, Code, and Visuals
+
+The companion project materials are available here:
+
+- [Combined analysis dataset](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/data/combined_em_macro_data.csv)
+- [Project repository](https://github.com/wilsonck75/D-Cubed-Data-Lab/tree/main/macro-factor-model-em)
+- [Data acquisition notebook](https://github.com/wilsonck75/D-Cubed-Data-Lab/blob/main/macro-factor-model-em/notebooks/01_data_acquisition.ipynb)
+- [Factor modeling notebook](https://github.com/wilsonck75/D-Cubed-Data-Lab/blob/main/macro-factor-model-em/notebooks/02_factor_modeling.ipynb)
+- [Visualization and analysis notebook](https://github.com/wilsonck75/D-Cubed-Data-Lab/blob/main/macro-factor-model-em/notebooks/03_visualization_and_analysis.ipynb)
+- [Summary report notebook](https://github.com/wilsonck75/D-Cubed-Data-Lab/blob/main/macro-factor-model-em/notebooks/04_summary_report.ipynb)
+- [Variance capture chart](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/variance_capture_analysis.png)
+- [Model fit chart](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/markdown_plots/EM_model_fit.png)
+- [Rolling comparison chart](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_all_indices_comparison.png)
