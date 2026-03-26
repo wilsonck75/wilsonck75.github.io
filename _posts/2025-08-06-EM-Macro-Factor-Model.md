@@ -277,6 +277,14 @@ The aggregate chart is useful, but a few single-country views make the pattern e
 
 *Figure: China's rolling `R²` is lower on average, but still exhibits distinct spikes during major global or geopolitical stress episodes, which is exactly the kind of episodic transmission this framework is meant to detect.*
 
+![South Africa Rolling R²](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_SouthAfrica.png)
+
+*Figure: South Africa sits in the middle of the spectrum, with visible macro sensitivity but less consistency than Mexico, underscoring how capital flows and commodity exposure can amplify regime dependence without fully dominating the market.*
+
+![Taiwan Rolling R²](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_Taiwan.png)
+
+*Figure: Taiwan provides the clearest contrast case. Its rolling `R²` is generally much lower, which reinforces the point that some EM markets remain much more sector- and locally driven outside of global stress windows.*
+
 ## Why This Matters
 
 This framework is helpful for several practical questions:
