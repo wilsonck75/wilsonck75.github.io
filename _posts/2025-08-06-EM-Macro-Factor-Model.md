@@ -2,8 +2,9 @@
 layout: post
 title: "Emerging Markets Macro Factor Model: A Data Science Approach to Global Finance"
 date: 2025-08-06
-image: "/posts/brics-association-of-five-major-emerging-national-economies.jpg"
-categories: [Python, Data Science, Finance, Machine Learning]
+image: "posts/brics-association-of-five-major-emerging-national-economies.jpg"
+permalink: /projects/em-macro-factor-model/
+categories: [python, data-science, finance, machine-learning]
 tags: [Python, Bloomberg, PCA, Factor Models, Emerging Markets, Risk Management, Portfolio Analysis]
 ---
 

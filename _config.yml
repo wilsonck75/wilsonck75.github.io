@@ -1,10 +1,7 @@
-# Remote theme directory
-remote_theme: analytics-link/analytics-link.github.io
-
 plugins:
+  - jekyll-feed
   - jekyll-paginate
   - jekyll-sitemap
-  - jekyll-remote-theme
 
 #-------------------------------
 # General Site Settings
@@ -22,6 +19,7 @@ avatar_image: /img/profile_picture.JPG
 
 #-------------------------------
 # Contact links
+linkedin: "https://www.linkedin.com/in/charlie-wilson-dc"
 linkedln: "https://www.linkedin.com/in/charlie-wilson-dc" # Add your linkedln handle
 github: "https://github.com/wilsonck75"  # Add your github handle
 
@@ -43,14 +41,22 @@ defaults:
 
 #-------------------------------
 # Exclude from processing.
-# exclude:
-#   - Gemfile
-#   - Gemfile.lock
-#   - node_modules
-#   - vendor/bundle/
-#   - vendor/cache/
-#   - vendor/gems/
-#   - vendor/ruby/
+exclude:
+  - README.md
+  - WARP.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - .bundle/
+  - .github/
+  - .jekyll-cache/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+
+# Post URLs are defined explicitly in front matter so public paths stay
+# human-readable and are decoupled from raw category names.
 
 
 

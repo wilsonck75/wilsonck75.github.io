@@ -4,6 +4,16 @@
 .env.*
 !.env.example   # allow a template without secrets
 
+# --- Jekyll build output ---
+_site/
+.jekyll-cache/
+.jekyll-metadata
+.sass-cache/
+
+# --- Ruby / Bundler ---
+.bundle/
+vendor/bundle/
+
 # --- Python virtual envs ---
 .venv/
 venv/
@@ -15,8 +25,8 @@ ENV/
 
 # --- macOS system files ---
 .DS_Store
+WARP.md
 
 # --- Python cache ---
 __pycache__/
 *.py[cod]
-

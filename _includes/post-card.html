@@ -1,0 +1,28 @@
+{% assign image_path = post.image | default: "" %}
+{% assign post_image_url = "/img/" | append: image_path | relative_url %}
+<article class="article col col-12 col-t-6">
+	<div class="article-box">
+		<div class="article-head">
+			<a href="{{ post.url | relative_url }}" class="article-image" style="background-image: url({{ post_image_url }})">
+			</a>
+		</div>
+		<div class="article-content">
+			<div class="article-info">
+				<div class="article-date">
+					<span class="page__meta"><i class="ion ion-md-time"></i> {% include read-time.html %}</span>
+				</div>
+				<div class="article-tag">
+					{% if post.tags.size >= 1 %}
+					{% for tag in post.tags %}
+						<a href="{{ "/tags" | relative_url }}#{{ tag }}" class="tag">{{ tag }}</a>
+					{% endfor %}
+					{% endif %}
+				</div>
+			</div>
+			<h2 class="article-title">
+				<a href="{{ post.url | relative_url }}">{{ post.title }}</a>
+			</h2>
+			<p class="article-excerpt">{% if post.description %}{{ post.description | strip_html | truncate: 135 }}{% else %}{{ post.content | strip_html | truncate: 135 }}{% endif %}</p>
+		</div>
+	</div>
+</article> <!-- /.article -->

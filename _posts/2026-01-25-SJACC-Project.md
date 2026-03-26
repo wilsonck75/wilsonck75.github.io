@@ -2,8 +2,9 @@
 layout: post
 title: "Advanced Arabic RAG Pipeline"
 date: 2026-01-25
-image: "/posts/arabic-rag-theme.png"
-categories: [Python, RAG, AI, NLP]
+image: "posts/arabic-rag-theme.png"
+permalink: /projects/advanced-arabic-rag-pipeline/
+categories: [python, rag, ai, nlp]
 tags: [RAG, Arabic NLP, AI, Python, Vector Search, ChromaDB]
 ---
 
@@ -201,4 +202,3 @@ Based on the Articles of Association, the Board of Directors possesses all neces
 This pipeline represents a significant step forward in making complex, multilingual datasets accessible. By combining state-of-the-art embedding models with a disciplined RAG architecture, we've created a system that doesn't just search—it understands.
 
 Whether for legal case analysis, institutional archiving, or cross-border research, this approach ensures that language barriers don't become knowledge barriers.
-

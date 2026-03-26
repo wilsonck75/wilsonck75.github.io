@@ -2,8 +2,9 @@
 layout: post
 title: "Finding Prime Numbers with Python: An Optimized Data Science Approach"
 date: 2025-08-04
-image: "/posts/primes_image.jpeg"
-categories: [Python, Data Science, Mathematics, Algorithms]
+image: "posts/primes_image.jpeg"
+permalink: /projects/prime-numbers-python/
+categories: [python, data-science, mathematics, algorithms]
 tags: [Python, Primes, Data Analysis, Visualization, Jupyter, Optimization]
 ---
 
