@@ -2,9 +2,6 @@
   Syntax Highlighting
 */
 
-@use "../0-settings/global" as *;
-@use "../0-settings/colors" as *;
-
 div.highlighter-rouge,
 figure.highlight {
   position: relative;

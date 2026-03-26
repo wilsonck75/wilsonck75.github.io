@@ -1,5 +1,3 @@
-@use "sass:color";
-
 // Main Colors
 $primary-color: #1ABC9C;
 $secondary-color: #C19CD8;
@@ -28,7 +26,7 @@ $heading-font-color: #404040;
 
 // Links
 $link-color: $primary-color;
-$link-color-hover: color.adjust($link-color, $lightness: 15%);
+$link-color-hover: lighten($link-color, 15%);
 
 // Button
 $button-color: $white;

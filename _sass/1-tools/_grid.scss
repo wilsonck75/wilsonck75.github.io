@@ -1,6 +1,3 @@
-@use "sass:math";
-@use "../0-settings/global" as *;
-
 $columns: 12;
 $container-base-width: 1200px;
 $container-offset: $base-spacing-unit;
@@ -49,19 +46,19 @@ $mq: ( $mobile:$columns, $tablet:$columns, $desktop:$columns );
 // MOBILE
 @for $i from 0 through $columns {
   .col-#{$i} {
-    width: math.percentage(math.div($i, $columns));
+    width: percentage( $i / $columns );
   }
 }
 
 @for $i from 0 through $columns {
   .push-#{$i} {
-    margin-left: math.percentage(math.div($i, $columns));
+    margin-left: percentage( $i / $columns );
   }
 }
 
 @for $i from 0 through $columns {
   .pull-#{$i} {
-    margin-right: math.percentage(math.div($i, $columns));
+    margin-right: percentage( $i / $columns );
   }
 }
 
@@ -73,19 +70,19 @@ $mq: ( $mobile:$columns, $tablet:$columns, $desktop:$columns );
 
     @for $i from 0 through $columns {
       .col-t-#{$i} {
-        width: math.percentage(math.div($i, $columns));
+        width: percentage( $i / $columns );
       }
     }
 
     @for $i from 0 through $columns {
       .push-t-#{$i} {
-        margin-left: math.percentage(math.div($i, $columns));
+        margin-left: percentage( $i / $columns );
       }
     }
 
     @for $i from 0 through $columns {
       .pull-t-#{$i} {
-        margin-right: math.percentage(math.div($i, $columns));
+        margin-right: percentage( $i / $columns );
       }
     }
   }
@@ -96,19 +93,19 @@ $mq: ( $mobile:$columns, $tablet:$columns, $desktop:$columns );
 
     @for $i from 0 through $columns {
       .col-d-#{$i} {
-        width: math.percentage(math.div($i, $columns));
+        width: percentage( $i / $columns );
       }
     }
 
     @for $i from 0 through $columns {
       .push-d-#{$i} {
-        margin-left: math.percentage(math.div($i, $columns));
+        margin-left: percentage( $i / $columns );
       }
     }
 
     @for $i from 0 through $columns {
       .pull-d-#{$i} {
-        margin-right: math.percentage(math.div($i, $columns));
+        margin-right: percentage( $i / $columns );
       }
     }
   }
@@ -124,3 +121,4 @@ $mq: ( $mobile:$columns, $tablet:$columns, $desktop:$columns );
     display: block !important;
   }
 }
+
