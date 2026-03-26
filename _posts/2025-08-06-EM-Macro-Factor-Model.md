@@ -317,14 +317,22 @@ But even in its current form, the model provides a solid bridge between quantita
 
 ## Data, Code, and Visuals
 
-The companion project materials are available here:
+The companion project materials are grouped below for easier navigation.
+
+### Data and Repository
 
 - [Combined analysis dataset](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/data/combined_em_macro_data.csv)
 - [Project repository](https://github.com/wilsonck75/D-Cubed-Data-Lab/tree/main/macro-factor-model-em)
+
+### Notebooks
+
 - [Data acquisition notebook](https://github.com/wilsonck75/D-Cubed-Data-Lab/blob/main/macro-factor-model-em/notebooks/01_data_acquisition.ipynb)
 - [Factor modeling notebook](https://github.com/wilsonck75/D-Cubed-Data-Lab/blob/main/macro-factor-model-em/notebooks/02_factor_modeling.ipynb)
 - [Visualization and analysis notebook](https://github.com/wilsonck75/D-Cubed-Data-Lab/blob/main/macro-factor-model-em/notebooks/03_visualization_and_analysis.ipynb)
 - [Summary report notebook](https://github.com/wilsonck75/D-Cubed-Data-Lab/blob/main/macro-factor-model-em/notebooks/04_summary_report.ipynb)
+
+### Visuals
+
 - [All plot outputs](https://github.com/wilsonck75/D-Cubed-Data-Lab/tree/main/macro-factor-model-em/output/plots)
 - [Markdown-ready plot folder](https://github.com/wilsonck75/D-Cubed-Data-Lab/tree/main/macro-factor-model-em/output/markdown_plots)
 - [Variance capture chart](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/variance_capture_analysis.png)
