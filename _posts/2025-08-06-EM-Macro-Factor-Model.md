@@ -261,6 +261,22 @@ This is why I think the model is more useful as a **regime detector** than as a 
 
 *Figure: Rolling `R²` comparison across markets using a 60-day window. Crisis periods create obvious spikes in macro co-movement, while calmer periods show much weaker common-factor influence.*
 
+### Representative Market Snapshots
+
+The aggregate chart is useful, but a few single-country views make the pattern easier to see:
+
+![Mexico Rolling R²](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_Mexico.png)
+
+*Figure: Mexico's rolling `R²` shows one of the clearest and most persistent macro linkages in the sample, consistent with external trade exposure and sensitivity to global risk conditions.*
+
+![Brazil Rolling R²](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_Brazil.png)
+
+*Figure: Brazil also shows meaningful macro sensitivity, but with more regime variation, reflecting a mix of commodity exposure and domestic political or policy noise.*
+
+![China Rolling R²](https://raw.githubusercontent.com/wilsonck75/D-Cubed-Data-Lab/main/macro-factor-model-em/output/plots/rolling_r2_China.png)
+
+*Figure: China's rolling `R²` is lower on average, but still exhibits distinct spikes during major global or geopolitical stress episodes, which is exactly the kind of episodic transmission this framework is meant to detect.*
+
 ## Why This Matters
 
 This framework is helpful for several practical questions:
