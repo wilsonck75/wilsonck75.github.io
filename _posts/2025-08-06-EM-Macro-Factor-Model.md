@@ -8,10 +8,6 @@ categories: [python, data-science, finance, machine-learning]
 tags: [Python, Bloomberg, PCA, Factor Models, Emerging Markets, Risk Management, Portfolio Analysis]
 ---
 
-<!-- markdownlint-disable MD025 -->
-
-# Emerging Markets Macro Factor Model: A Data Science Approach to Global Finance
-
 Emerging markets sit at the intersection of global and local forces. They are exposed to shifts in U.S. rates, dollar strength, volatility, and commodities, but they are also shaped by country-specific regulation, politics, sector mix, and domestic demand. That makes a basic question surprisingly hard to answer: **how much of EM equity performance is really global macro, and how much is local noise?**
 
 This project tackles that question with a PCA-based macro factor model built on ten years of daily data. Using Bloomberg-sourced MSCI country indices and a focused set of global macro series, I compress correlated macro variables into a few orthogonal factors, regress country equity returns on those factors, and then track the model’s explanatory power through time with rolling-window analysis.
