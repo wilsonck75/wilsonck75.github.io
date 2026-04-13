@@ -1,0 +1,1308 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Powering Potential Data Availability Dashboard</title>
+    <style>
+      :root {
+        --bg: #efe6db;
+        --paper: rgba(252, 248, 241, 0.9);
+        --paper-strong: #fcf8f1;
+        --ink: #1a2430;
+        --muted: #61707d;
+        --line: rgba(80, 93, 109, 0.14);
+        --teal: #0d6a63;
+        --teal-deep: #0a4b48;
+        --blue: #1e5f98;
+        --blue-deep: #1d3c63;
+        --gold: #ba7a1f;
+        --gold-soft: #f4e2c6;
+        --teal-soft: #d6eee8;
+        --blue-soft: #dde9f6;
+        --rose-soft: #f4dddd;
+        --shadow: 0 28px 60px rgba(28, 39, 54, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(13, 106, 99, 0.12), transparent 28%),
+          radial-gradient(circle at 85% 8%, rgba(186, 122, 31, 0.15), transparent 24%),
+          linear-gradient(180deg, #f2eadf 0%, #e8ddd0 100%);
+      }
+
+      .page {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 26px 18px 60px;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+        letter-spacing: -0.02em;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.85fr);
+        gap: 18px;
+        align-items: stretch;
+      }
+
+      .hero-main,
+      .hero-side,
+      .panel,
+      .overview-card,
+      .quality-card,
+      .support-card,
+      .claim-card,
+      .caveat-card {
+        border-radius: 28px;
+        box-shadow: var(--shadow);
+      }
+
+      .hero-main {
+        position: relative;
+        overflow: hidden;
+        padding: 34px 34px 30px;
+        color: white;
+        background:
+          radial-gradient(circle at 75% 30%, rgba(255, 255, 255, 0.12), transparent 26%),
+          linear-gradient(135deg, rgba(13, 106, 99, 0.98), rgba(29, 60, 99, 0.98));
+      }
+
+      .hero-main::after {
+        content: "";
+        position: absolute;
+        right: -90px;
+        bottom: -120px;
+        width: 360px;
+        height: 360px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .eyebrow {
+        margin: 0 0 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-size: 12px;
+        opacity: 0.86;
+      }
+
+      h1 {
+        margin: 0;
+        max-width: 820px;
+        font-size: clamp(2.5rem, 4vw, 4.5rem);
+        line-height: 0.92;
+      }
+
+      .hero-copy {
+        max-width: 720px;
+        margin-top: 16px;
+        color: rgba(255, 255, 255, 0.92);
+        line-height: 1.62;
+        font-size: 1.04rem;
+      }
+
+      .hero-meta {
+        margin-top: 18px;
+        color: rgba(255, 255, 255, 0.76);
+        font-size: 0.92rem;
+      }
+
+      .hero-side {
+        padding: 24px;
+        background: linear-gradient(180deg, rgba(252, 248, 241, 0.96), rgba(246, 239, 228, 0.94));
+        border: 1px solid rgba(80, 93, 109, 0.12);
+      }
+
+      .hero-side h2 {
+        margin: 0 0 12px;
+        font-size: 1.3rem;
+      }
+
+      .hero-side p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .hero-list {
+        display: grid;
+        gap: 10px;
+        margin: 18px 0 0;
+        padding-left: 18px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .hero-list li {
+        margin: 0;
+      }
+
+      .overview {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .overview-card {
+        grid-column: span 3;
+        padding: 20px 20px 18px;
+        background: rgba(252, 248, 241, 0.96);
+        border: 1px solid rgba(80, 93, 109, 0.12);
+      }
+
+      .overview-card.emphasis {
+        grid-column: span 4;
+        background: linear-gradient(180deg, rgba(221, 233, 246, 0.9), rgba(252, 248, 241, 0.96));
+      }
+
+      .overview-kicker {
+        color: var(--muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .overview-value {
+        margin-top: 8px;
+        font-size: 2.1rem;
+        line-height: 1;
+      }
+
+      .overview-note {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.45;
+      }
+
+      .section {
+        margin-top: 30px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 20px;
+        margin-bottom: 14px;
+      }
+
+      .section-header h2 {
+        margin: 0;
+        font-size: 1.7rem;
+      }
+
+      .section-header p {
+        margin: 0;
+        max-width: 860px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .panel {
+        padding: 24px;
+        background: var(--paper);
+        border: 1px solid rgba(80, 93, 109, 0.12);
+      }
+
+      .panel h3 {
+        margin: 0 0 10px;
+        font-size: 1.2rem;
+      }
+
+      .panel-copy {
+        margin: 0 0 14px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .quality-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .quality-card {
+        padding: 18px;
+        background: rgba(252, 248, 241, 0.95);
+        border: 1px solid rgba(80, 93, 109, 0.12);
+      }
+
+      .quality-card h4 {
+        margin: 0;
+        font-size: 1.02rem;
+      }
+
+      .quality-card p {
+        margin: 12px 0 0;
+        color: var(--muted);
+        line-height: 1.48;
+        font-size: 0.93rem;
+      }
+
+      .tooltip-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        vertical-align: middle;
+        margin-left: 8px;
+      }
+
+      .info-dot {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(31, 48, 66, 0.1);
+        color: var(--blue-deep);
+        font: inherit;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: help;
+        padding: 0;
+      }
+
+      .tooltip-text {
+        position: absolute;
+        left: 50%;
+        bottom: calc(100% + 10px);
+        transform: translateX(-50%) translateY(8px);
+        width: min(320px, 72vw);
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(25, 37, 51, 0.96);
+        color: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 18px 36px rgba(17, 25, 35, 0.28);
+        font-size: 0.84rem;
+        line-height: 1.48;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.16s ease, transform 0.16s ease;
+        z-index: 20;
+      }
+
+      .tooltip-wrap:hover .tooltip-text,
+      .tooltip-wrap:focus-within .tooltip-text {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      .tooltip-text strong {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 0.76rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.72);
+      }
+
+      .tooltip-text .tooltip-source {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        color: rgba(255, 255, 255, 0.84);
+        font-size: 0.78rem;
+      }
+
+      .chip {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        white-space: nowrap;
+      }
+
+      .chip.strong {
+        background: #d8f2de;
+        color: #1f6b36;
+      }
+
+      .chip.medium {
+        background: #e4eef9;
+        color: #215c94;
+      }
+
+      .chip.partial {
+        background: #fff0d5;
+        color: #8c5703;
+      }
+
+      .chip.weak {
+        background: #f7dfdf;
+        color: #9d2626;
+      }
+
+      .backbone-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(340px, 0.9fr);
+        gap: 16px;
+        align-items: start;
+      }
+
+      .stack {
+        display: grid;
+        gap: 16px;
+      }
+
+      .timeline-chart {
+        display: flex;
+        align-items: end;
+        gap: 4px;
+        min-height: 210px;
+        padding-top: 8px;
+      }
+
+      .timeline-bar-wrap {
+        flex: 1 1 0;
+        min-width: 0;
+        position: relative;
+      }
+
+      .timeline-bar-group {
+        display: flex;
+        align-items: end;
+        gap: 3px;
+        width: 100%;
+      }
+
+      .timeline-value,
+      .timeline-year {
+        text-align: center;
+        font-size: 0.68rem;
+        line-height: 1.15;
+      }
+
+      .timeline-value {
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      .timeline-bar {
+        width: 100%;
+        min-height: 8px;
+        border-radius: 12px 12px 4px 4px;
+        background: linear-gradient(180deg, var(--blue), var(--blue-deep));
+        cursor: help;
+      }
+
+      .timeline-bar.training {
+        background: linear-gradient(180deg, var(--gold), #8f5514);
+      }
+
+      .timeline-tooltip {
+        position: absolute;
+        left: 50%;
+        bottom: calc(100% + 12px);
+        transform: translateX(-50%) translateY(8px);
+        width: min(280px, 72vw);
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(25, 37, 51, 0.97);
+        color: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 18px 36px rgba(17, 25, 35, 0.28);
+        font-size: 0.82rem;
+        line-height: 1.45;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.16s ease, transform 0.16s ease;
+        z-index: 30;
+        text-align: left;
+      }
+
+      .timeline-tooltip strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.76rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.72);
+      }
+
+      .timeline-bar-wrap:hover .timeline-tooltip,
+      .timeline-bar-wrap:focus-within .timeline-tooltip {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      .timeline-footer {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .pill {
+        padding: 10px 12px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.56);
+        border: 1px solid rgba(80, 93, 109, 0.1);
+        font-size: 0.9rem;
+      }
+
+      .kv {
+        display: grid;
+        gap: 8px;
+      }
+
+      .kv-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding-top: 8px;
+        border-top: 1px solid var(--line);
+        font-size: 0.92rem;
+      }
+
+      .kv-row span:last-child {
+        color: var(--muted);
+        text-align: right;
+      }
+
+      .bar-chart {
+        display: grid;
+        gap: 10px;
+      }
+
+      .bar-row {
+        display: grid;
+        grid-template-columns: minmax(110px, 170px) 1fr 58px;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .bar-label,
+      .bar-value {
+        font-size: 0.92rem;
+      }
+
+      .bar-track {
+        height: 13px;
+        background: rgba(113, 125, 140, 0.14);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .bar-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--teal), #39a392);
+      }
+
+      .bar-fill.alt {
+        background: linear-gradient(90deg, var(--gold), #e4aa52);
+      }
+
+      .bar-fill.blue {
+        background: linear-gradient(90deg, var(--blue), #69a3db);
+      }
+
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .metric-tile {
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(80, 93, 109, 0.1);
+      }
+
+      .metric-kicker {
+        color: var(--muted);
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .metric-value {
+        margin-top: 6px;
+        font-size: 1.45rem;
+        line-height: 1.1;
+      }
+
+      .outcomes-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.85fr);
+        gap: 16px;
+        align-items: start;
+      }
+
+      .support-grid,
+      .claims-grid,
+      .caveat-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .support-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 16px;
+      }
+
+      .support-card,
+      .claim-card,
+      .caveat-card {
+        padding: 18px;
+        background: rgba(252, 248, 241, 0.95);
+        border: 1px solid rgba(80, 93, 109, 0.12);
+      }
+
+      .support-card {
+        background: linear-gradient(180deg, rgba(221, 233, 246, 0.62), rgba(252, 248, 241, 0.95));
+      }
+
+      .claim-card {
+        background: linear-gradient(180deg, rgba(244, 226, 198, 0.78), rgba(252, 248, 241, 0.95));
+      }
+
+      .support-card h4,
+      .claim-card h4,
+      .caveat-card h4 {
+        margin: 0;
+        font-size: 1.04rem;
+      }
+
+      .support-card p,
+      .claim-card p,
+      .caveat-card p {
+        margin: 12px 0 0;
+        color: var(--muted);
+        line-height: 1.48;
+        font-size: 0.93rem;
+      }
+
+      .claims-grid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+
+      .caveat-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      }
+
+      .foot {
+        margin-top: 24px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      @media (max-width: 1120px) {
+        .overview {
+          grid-template-columns: repeat(6, minmax(0, 1fr));
+        }
+
+        .overview-card,
+        .overview-card.emphasis {
+          grid-column: span 3;
+        }
+
+        .quality-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .metrics-grid,
+        .support-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 940px) {
+        .hero,
+        .backbone-grid,
+        .outcomes-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .page {
+          padding: 18px 14px 40px;
+        }
+
+      .hero-main,
+      .hero-side,
+      .panel,
+      .overview-card,
+      .quality-card,
+        .support-card,
+        .claim-card,
+        .caveat-card {
+          border-radius: 22px;
+        }
+
+        .hero-main,
+        .hero-side,
+        .panel {
+          padding: 20px;
+        }
+
+        .overview,
+        .quality-grid,
+        .metrics-grid,
+        .support-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .overview-card,
+        .overview-card.emphasis {
+          grid-column: span 1;
+        }
+
+        .timeline-footer {
+          grid-template-columns: 1fr;
+        }
+
+        .bar-row {
+          grid-template-columns: 96px 1fr 46px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <section class="hero">
+        <div class="hero-main">
+          <p class="eyebrow">Powering Potential</p>
+          <h1>Cleaning The Archive, Learning From It, And Building What Comes Next</h1>
+          <div class="hero-copy">
+            This dashboard is meant to support historical cleanup and future measurement design. It focuses
+            on which sources are strongest, what the archive already lets us learn, where definitions still
+            need cleanup, and which source tables should become the backbone for better data collection going forward.
+          </div>
+          <div class="hero-meta" id="generated-at"></div>
+        </div>
+        <aside class="hero-side">
+          <h2>How To Read This Version</h2>
+          <p>
+            This version is designed to make the provenance of each number clearer and reduce repeated
+            summary boxes. Hover or focus the small info dots to see how a field is defined and where
+            it came from in the archive.
+          </p>
+          <ul class="hero-list">
+            <li>The top line now shows only a few anchor numbers instead of repeating the same evidence in multiple places.</li>
+            <li>Each major panel and metric tile can show a definition and source note.</li>
+            <li>The bottom of the page now focuses on cleanup priorities and future collection, not public claims.</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section class="overview" id="overview"></section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Extraction Quality</h2>
+            <p>
+              These ratings describe how dependable the extraction is from the current files. They do
+              not judge whether the underlying program work happened. This is the quick read on which
+              sources are ready for management use and which still need cleanup before they support
+              longitudinal analysis and future collection.
+            </p>
+          </div>
+        </div>
+        <div class="quality-grid" id="quality-grid"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Historical Backbone And Training Interpretation</h2>
+            <p>
+              The implementation timeline remains the strongest cross-school history in the archive.
+              The important interpretation change is that “training” is usually logged as an activity
+              attached to another implementation, not as a standalone project type.
+            </p>
+          </div>
+        </div>
+        <div class="backbone-grid">
+          <div class="stack">
+            <div class="panel">
+              <h3>Deployment Schools By Year <span class="doc-anchor" data-doc-key="deploymentTimelinePanel"></span></h3>
+              <p class="panel-copy">
+                Each bar shows the number of schools with deployment or upgrade activity in that year.
+                Hover over a bar to see the underlying row counts, overlap with training, and the deployment labels driving that year.
+              </p>
+              <div class="timeline-chart" id="deployment-timeline-chart"></div>
+              <div class="timeline-footer" id="deployment-timeline-footer"></div>
+            </div>
+            <div class="panel">
+              <h3>Training-Only School Or Entity Labels By Year <span class="doc-anchor" data-doc-key="trainingOnlyTimelinePanel"></span></h3>
+              <p class="panel-copy">
+                This isolates training labels that do not also appear with a deployment or upgrade label in the same year.
+                Hover over a bar to see the training rows, overlap, and the labels behind that year.
+              </p>
+              <div class="timeline-chart" id="training-only-timeline-chart"></div>
+              <div class="timeline-footer" id="training-only-timeline-footer"></div>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="panel">
+              <h3>What “Training” Means Here <span class="doc-anchor" data-doc-key="trainingPanel"></span></h3>
+              <p class="panel-copy" id="training-summary"></p>
+              <div class="kv" id="training-kv"></div>
+              <div class="bar-chart" id="training-categories" style="margin-top: 16px;"></div>
+            </div>
+            <div class="panel">
+              <h3>What Training Most Often Appears Beside <span class="doc-anchor" data-doc-key="trainingPairingsPanel"></span></h3>
+              <p class="panel-copy">
+                These are the non-training implementation labels that most often show up in the
+                same school-year as training. This is the clearest evidence that training behaves
+                like a companion activity.
+              </p>
+              <div class="bar-chart" id="training-pairings"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>What We Can Already Learn From Older Outcome Sources</h2>
+            <p>
+              Older outcome coverage is stronger than the recent files alone suggest. The exam archive
+              is the biggest structured student-outcome layer, and the older graduate survey provides
+              row-level alumni responses that can later be normalized into a reusable outcomes table.
+            </p>
+          </div>
+        </div>
+        <div class="outcomes-grid">
+          <div class="panel">
+            <h3>National Exam Archive <span class="doc-anchor" data-doc-key="examPanel"></span></h3>
+            <p class="panel-copy">
+              This is the strongest legacy outcome source because it preserves school-by-year pass-rate
+              history and Form V qualification rates across multiple clusters.
+            </p>
+            <div class="metrics-grid" id="exam-stats"></div>
+            <div class="bar-chart" id="exam-groups"></div>
+          </div>
+          <div class="stack">
+            <div class="panel">
+              <h3>Graduate Survey Of Form 4 Leavers <span class="doc-anchor" data-doc-key="surveyPanel"></span></h3>
+              <p class="panel-copy">
+                These are raw respondent counts from the older row-level survey workbook, not final
+                organization-wide percentages.
+              </p>
+              <div class="metrics-grid" id="survey-stats"></div>
+            </div>
+            <div class="panel">
+              <h3>Recent Graduate Tracking <span class="doc-anchor" data-doc-key="graduateTrackingPanel"></span></h3>
+              <p class="panel-copy">
+                Useful but narrow: one school cluster, three years, and a 2023 schema change that
+                requires a comparable measure rather than a straight raw total.
+              </p>
+              <div class="bar-chart" id="graduate-years"></div>
+            </div>
+          </div>
+        </div>
+        <div class="support-grid" id="support-grid"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Questions The Archive Can Already Help Answer</h2>
+            <p>
+              These are the substantive questions the current archive can already support, even before a
+              full cleanup is finished. The point here is not perfection, but what we can already learn
+              if we organize the strongest historical sources well.
+            </p>
+          </div>
+        </div>
+        <div class="claims-grid" id="learning-grid"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Foundation For Cleanup And Future Collection</h2>
+            <p>
+              These are the source layers that are most worth turning into clean master tables, standard
+              definitions, and repeatable collection instruments. This is the practical bridge from
+              historical cleanup into future M&amp;E.
+            </p>
+          </div>
+        </div>
+        <div class="caveat-grid" id="foundation-grid"></div>
+      </section>
+
+      <div class="foot">
+        Open this file directly in a browser. It reads from the local generated data file in the same folder.
+      </div>
+    </div>
+
+    <script src="./dashboard-data.js"></script>
+    <script>
+      const data = window.DASHBOARD_DATA;
+      const number = new Intl.NumberFormat("en-US");
+      const SOURCES = {
+        timeline: "Monitoring and Evaluation/Implementation Timeline for Website_2007-2023.xlsx (By Date sheet)",
+        equipment: "Monitoring and Evaluation/PROGRAM EQUIPMENTS_2008-2023.xlsx",
+        examArchive: "Monitoring and Evaluation/M&E_Historical Files From Janice/National Exam Results/",
+        graduateSurvey: "Monitoring and Evaluation/M&E_Historical Files From Janice/Surveys-Questionnaires/Copy of Survey of Form 4 graduates.xlsx (Sheet1)",
+        graduateTracking: "Monitoring and Evaluation/Completed Forms and Spreadsheets/KDP 1 SCHOOL STATUS OF GRADUATES.xlsx",
+        annual2018: "Monitoring and Evaluation/M&E_Historical Files From Janice/Annual School Data/2018 Annual School Forms/School Data 2018.ods.xlsx (Student Data sheet)",
+        enrollmentHistory: "Monitoring and Evaluation/M&E_Historical Files From Janice/Annual School Data/Student School #s_2006-2016.xlsx (Karatu Schools sheet)",
+        quality: "Quality labels are derived from how directly and consistently the current files could be extracted.",
+      };
+
+      const DOCS = {
+        deploymentTimelinePanel: {
+          definition: "This chart shows the number of schools with deployment or upgrade activity in each year. It is not a raw row count, because a single year can contain multiple activity rows for the same school.",
+          source: SOURCES.timeline,
+        },
+        trainingOnlyTimelinePanel: {
+          definition: "This chart shows only training school or entity labels that do not also appear with a deployment or upgrade label in the same year. It helps separate standalone training activity from training that accompanied a rollout.",
+          source: SOURCES.timeline,
+        },
+        trainingPanel: {
+          definition: "Training is classified as a timeline activity label. In this dashboard, it is separated from deployment and upgrade labels to clarify whether it behaves like a project type or a companion activity.",
+          source: SOURCES.timeline,
+        },
+        trainingPairingsPanel: {
+          definition: "Counts of school-year combinations where at least one training row appears alongside at least one non-training implementation label.",
+          source: SOURCES.timeline,
+        },
+        examPanel: {
+          definition: "Legacy national exam workbooks grouped by cluster. School sheets are school-named tabs, and pass-rate points count usable numeric values in the percent-passed series.",
+          source: SOURCES.examArchive,
+        },
+        surveyPanel: {
+          definition: "Raw respondent counts from the older graduate survey workbook. These are yes-count tallies after filtering to valid respondent rows, not normalized percentages.",
+          source: SOURCES.graduateSurvey,
+        },
+        graduateTrackingPanel: {
+          definition: "Post-secondary placements are shown as advance school plus college or university, which is the most comparable measure across 2021-2023 given the 2023 schema change.",
+          source: SOURCES.graduateTracking,
+        },
+      };
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function tooltipMarkup(definition, source) {
+        return `
+          <span class="tooltip-wrap" tabindex="0">
+            <button class="info-dot" type="button" aria-label="Show definition and source">i</button>
+            <span class="tooltip-text">
+              <strong>Definition</strong>
+              ${escapeHtml(definition)}
+              <span class="tooltip-source"><strong>Source</strong>${escapeHtml(source)}</span>
+            </span>
+          </span>
+        `;
+      }
+
+      function injectDocAnchors() {
+        document.querySelectorAll(".doc-anchor").forEach((node) => {
+          const doc = DOCS[node.dataset.docKey];
+          if (!doc) return;
+          node.innerHTML = tooltipMarkup(doc.definition, doc.source);
+        });
+      }
+
+      function renderBarChart(targetId, items, valueKey, labelKey, className = "", tooltipBuilder = null) {
+        const target = document.getElementById(targetId);
+        target.innerHTML = "";
+
+        const max = Math.max(...items.map((item) => Number(item[valueKey]) || 0), 1);
+        items.forEach((item) => {
+          const row = document.createElement("div");
+          row.className = "bar-row";
+          if (tooltipBuilder) {
+            row.title = tooltipBuilder(item);
+          }
+
+          const label = document.createElement("div");
+          label.className = "bar-label";
+          label.textContent = item[labelKey];
+
+          const track = document.createElement("div");
+          track.className = "bar-track";
+
+          const fill = document.createElement("div");
+          fill.className = `bar-fill ${className}`.trim();
+          fill.style.width = `${((Number(item[valueKey]) || 0) / max) * 100}%`;
+          track.appendChild(fill);
+
+          const value = document.createElement("div");
+          value.className = "bar-value";
+          value.textContent = number.format(item[valueKey]);
+
+          row.append(label, track, value);
+          target.appendChild(row);
+        });
+      }
+
+      function renderTimeline(targetId, items, getCount, tooltipBuilder, className = "") {
+        const target = document.getElementById(targetId);
+        target.innerHTML = "";
+        const max = Math.max(...items.map((item) => getCount(item)), 1);
+
+        items.forEach((item) => {
+          const wrap = document.createElement("div");
+          wrap.className = "timeline-bar-wrap";
+          wrap.tabIndex = 0;
+
+          const value = document.createElement("div");
+          value.className = "timeline-value";
+          value.textContent = getCount(item);
+
+          const tooltip = document.createElement("div");
+          tooltip.className = "timeline-tooltip";
+          tooltip.innerHTML = tooltipBuilder(item);
+
+          const bar = document.createElement("div");
+          bar.className = `timeline-bar ${className}`.trim();
+          bar.style.height = `${Math.max((getCount(item) / max) * 156, 8)}px`;
+
+          const year = document.createElement("div");
+          year.className = "timeline-year";
+          year.textContent = item.year;
+
+          wrap.append(value, bar, year, tooltip);
+          target.appendChild(wrap);
+        });
+      }
+
+      function qualityTone(label) {
+        if (label === "High") return "strong";
+        if (label === "Medium-High" || label === "Medium") return "medium";
+        if (label === "Low-Medium") return "partial";
+        return "weak";
+      }
+
+      function appendOverview() {
+        const target = document.getElementById("overview");
+        const items = [
+          {
+            kicker: "Dated timeline rows",
+            value: number.format(data.timeline.totalEvents),
+            note: "The strongest structured historical source in the archive.",
+            definition: "Number of dated implementation rows extracted from the By Date sheet of the timeline workbook.",
+            source: SOURCES.timeline,
+          },
+          {
+            kicker: "Exam archive school sheets",
+            value: number.format(data.legacyOutcomes.examArchive.schoolSheets),
+            note: "Structured older student outcome coverage across seven workbooks.",
+            definition: "Count of school-named worksheets across the legacy national exam workbooks after excluding average, links, and comparison tabs.",
+            source: SOURCES.examArchive,
+          },
+          {
+            kicker: "Graduate survey respondents",
+            value: number.format(data.legacyOutcomes.graduateSurvey.respondents),
+            note: "Older alumni responses that can be cleaned into a reusable outcomes table.",
+            definition: "Count of valid respondent rows in the older Form 4 graduate survey workbook after filtering out summary lines and blanks.",
+            source: SOURCES.graduateSurvey,
+          },
+          {
+            kicker: "Equipment inventory rows",
+            value: number.format(data.equipment.rowCount),
+            note: "A strong base for a future installations and assets master table.",
+            definition: "Count of school-level rows in the equipment deployment workbook.",
+            source: SOURCES.equipment,
+          },
+        ];
+
+        items.forEach((item) => {
+          const card = document.createElement("div");
+          card.className = `overview-card ${item.emphasis ? "emphasis" : ""}`.trim();
+          card.innerHTML = `
+            <div class="overview-kicker">${item.kicker}${tooltipMarkup(item.definition, item.source)}</div>
+            <div class="overview-value">${item.value}</div>
+            <div class="overview-note">${item.note}</div>
+          `;
+          target.appendChild(card);
+        });
+      }
+
+      function appendQualityCards() {
+        const target = document.getElementById("quality-grid");
+        const sourceMap = {
+          "Implementation timeline": SOURCES.timeline,
+          "Equipment inventory": SOURCES.equipment,
+          "National exam archive": SOURCES.examArchive,
+          "Graduate survey workbook": SOURCES.graduateSurvey,
+          "Historical enrollment and annual counts": `${SOURCES.enrollmentHistory}; ${SOURCES.annual2018}`,
+          "Graduate tracking workbook": SOURCES.graduateTracking,
+          "Active site survey workbook": "Monitoring and Evaluation/PEF School Site Surveys.xlsx",
+        };
+        data.quality.sources.forEach((item) => {
+          const card = document.createElement("div");
+          card.className = "quality-card";
+          card.innerHTML = `
+            <h4>${item.name}${tooltipMarkup("Extraction quality reflects how directly and consistently the current file could be summarized into the dashboard.", sourceMap[item.name] || SOURCES.quality)}</h4>
+            <p><span class="chip ${qualityTone(item.quality)}">${item.quality}</span></p>
+            <p>${item.detail}</p>
+          `;
+          target.appendChild(card);
+        });
+      }
+
+      function appendTimelineFooter(targetId, items) {
+        const target = document.getElementById(targetId);
+        target.innerHTML = "";
+
+        items.forEach((text) => {
+          const pill = document.createElement("div");
+          pill.className = "pill";
+          pill.textContent = text;
+          target.appendChild(pill);
+        });
+      }
+
+      function appendTrainingKv() {
+        const target = document.getElementById("training-kv");
+        const rows = [
+          ["Training-only rows", number.format(data.trainingInterpretation.categories.find((item) => item.key === "training_only").count), "Rows whose implementation label is training-related and does not also name a deployment or upgrade."],
+          ["Schools with any training rows", number.format(data.trainingInterpretation.trainingSchoolCount), "Distinct school or entity labels that appear on at least one training row in the timeline."],
+          ["Also have deployment rows", number.format(data.trainingInterpretation.trainingAndDeploymentSchoolCount), "Training schools that also appear on at least one deployment or upgrade row in the same workbook."],
+          ["Training-only entities", `${number.format(data.trainingInterpretation.trainingOnlySchoolCount)} mostly group or district entries`, "Entity labels with training rows but no matched deployment row; many are group or district-level entries rather than individual schools."],
+        ];
+
+        rows.forEach(([label, value, definition]) => {
+          const div = document.createElement("div");
+          div.className = "kv-row";
+          div.innerHTML = `<span>${label}${tooltipMarkup(definition, SOURCES.timeline)}</span><span>${value}</span>`;
+          target.appendChild(div);
+        });
+      }
+
+      function appendMetricTiles(targetId, items) {
+        const target = document.getElementById(targetId);
+        items.forEach((item) => {
+          const tile = document.createElement("div");
+          tile.className = "metric-tile";
+          tile.innerHTML = `
+            <div class="metric-kicker">${item.kicker}${tooltipMarkup(item.definition, item.source)}</div>
+            <div class="metric-value">${item.value}</div>
+          `;
+          target.appendChild(tile);
+        });
+      }
+
+      function appendSupportCards() {
+        const target = document.getElementById("support-grid");
+        const cards = [
+          {
+            title: "Enrollment history",
+            meta: `${number.format(data.legacyOutcomes.enrollmentHistory.rows)} rows across ${data.legacyOutcomes.enrollmentHistory.schools} schools`,
+            detail: `${data.legacyOutcomes.enrollmentHistory.yearStart}-${data.legacyOutcomes.enrollmentHistory.yearEnd}. ${data.legacyOutcomes.enrollmentHistory.detail}`,
+            definition: "Historic annual school-count rows from the Karatu Schools sheet, useful for within-school baseline reconstruction.",
+            source: SOURCES.enrollmentHistory,
+          },
+          {
+            title: "2018 annual school compilation",
+            meta: `${number.format(data.legacyOutcomes.annual2018.studentTotal)} students and ${number.format(data.legacyOutcomes.annual2018.teacherTotal)} teachers`,
+            detail: `${data.legacyOutcomes.annual2018.schoolsWithStudentTotals} of ${data.legacyOutcomes.annual2018.schools} schools have student totals. ${data.legacyOutcomes.annual2018.detail}`,
+            definition: "Cross-school 2018 snapshot of student and teacher counts taken from the compiled annual school workbook.",
+            source: SOURCES.annual2018,
+          },
+        ];
+
+        cards.forEach((item) => {
+          const card = document.createElement("div");
+          card.className = "support-card";
+          card.innerHTML = `
+            <h4>${item.title}${tooltipMarkup(item.definition, item.source)}</h4>
+            <p><span class="chip medium">${item.meta}</span></p>
+            <p>${item.detail}</p>
+          `;
+          target.appendChild(card);
+        });
+      }
+
+      function appendLearningCards() {
+        const target = document.getElementById("learning-grid");
+        const items = [
+          {
+            title: "How program activity expanded over time",
+            detail: "The timeline can already show when implementation activity accelerated, where activity clusters sit over time, and how training tended to accompany rollouts.",
+            evidence: `${number.format(data.timeline.totalEvents)} dated rows across ${number.format(data.timeline.schoolCount)} schools`,
+            definition: "Chronology of implementation activity, not a count of unique projects.",
+            source: SOURCES.timeline,
+          },
+          {
+            title: "Which school groups have exam trends we can study",
+            detail: "The exam archive is already deep enough to compare pass-rate patterns by school group and to test within-school before/after questions once school IDs are normalized.",
+            evidence: `${number.format(data.legacyOutcomes.examArchive.schoolSheets)} school sheets from ${data.legacyOutcomes.examArchive.yearStart}-${data.legacyOutcomes.examArchive.yearEnd}`,
+            definition: "Historic school-level exam time series preserved across the legacy workbooks.",
+            source: SOURCES.examArchive,
+          },
+          {
+            title: "What alumni pathways are visible today",
+            detail: "The graduate survey and recent graduate tracking already give partial visibility into employment, further education, vocational training, and perceived value of computer skills.",
+            evidence: `${number.format(data.legacyOutcomes.graduateSurvey.respondents)} survey respondents and ${data.graduates.years.length} recent tracking years`,
+            definition: "Mixed alumni outcome evidence drawn from one older row-level survey and one recent tracking workbook.",
+            source: `${SOURCES.graduateSurvey}; ${SOURCES.graduateTracking}`,
+          },
+          {
+            title: "Which schools have usable baseline count history",
+            detail: "Historic enrollment rows and the 2018 annual compilation make it possible to reconstruct at least part of the baseline picture for school size, student counts, and teacher counts.",
+            evidence: `${number.format(data.legacyOutcomes.enrollmentHistory.rows)} historic count rows plus ${number.format(data.legacyOutcomes.annual2018.studentTotal)} students in 2018 snapshot`,
+            definition: "Historic school-size and staffing context, uneven but good enough to anchor future school-year master tables.",
+            source: `${SOURCES.enrollmentHistory}; ${SOURCES.annual2018}`,
+          },
+        ];
+
+        items.forEach((item) => {
+          const card = document.createElement("div");
+          card.className = "claim-card";
+          card.innerHTML = `
+            <h4>${item.title}${tooltipMarkup(item.definition, item.source)}</h4>
+            <p><span class="chip medium">${item.evidence}</span></p>
+            <p>${item.detail}</p>
+          `;
+          target.appendChild(card);
+        });
+      }
+
+      function appendFoundationCards() {
+        const target = document.getElementById("foundation-grid");
+        const priorities = [
+          {
+            title: "School Master Table",
+            detail: "Create one canonical school table with a persistent school ID, cleaned school names, district, country, installation dates, and active/inactive status. This is the glue layer across nearly every workbook.",
+            source: `${SOURCES.timeline}; ${SOURCES.equipment}; ${SOURCES.annual2018}`,
+            definition: "One-row-per-school reference table used to connect historical and future data sources.",
+          },
+          {
+            title: "School-Year Outcomes Table",
+            detail: "Normalize exam, enrollment, attendance, graduate progression, and any other school-year outcomes into a consistent table keyed by school and year. This is the best path to within-school before/after analysis.",
+            source: `${SOURCES.examArchive}; ${SOURCES.enrollmentHistory}; ${SOURCES.annual2018}; ${SOURCES.graduateTracking}`,
+            definition: "One-row-per-school-per-year analytical table for trend and pre/post analysis.",
+          },
+          {
+            title: "Installations And Training Log",
+            detail: "Split deployment, upgrade, and training into standard activity types with shared definitions. The timeline is already strong enough to seed this, but it needs a cleaner activity taxonomy.",
+            source: SOURCES.timeline,
+            definition: "Standard event log that distinguishes hardware deployment, software upgrade, training, and follow-up support.",
+          },
+          {
+            title: "Future Collection Instruments",
+            detail: "Design future school and teacher forms to feed the same master tables directly, with fixed definitions for students, teachers, lab access, digital literacy, exam outcomes, and alumni follow-up.",
+            source: `${SOURCES.annual2018}; ${SOURCES.graduateSurvey}; ${SOURCES.graduateTracking}`,
+            definition: "Repeatable survey and reporting forms aligned to the cleaned historical data model.",
+          },
+        ];
+
+        priorities.forEach((item) => {
+          const card = document.createElement("div");
+          card.className = "caveat-card";
+          card.innerHTML = `<h4>${item.title}${tooltipMarkup(item.definition, item.source)}</h4><p>${item.detail}</p>`;
+          target.appendChild(card);
+        });
+      }
+
+      document.getElementById("generated-at").textContent =
+        `Generated from local files on ${new Date(data.generatedAt).toLocaleString()}`;
+
+      injectDocAnchors();
+      appendOverview();
+      appendQualityCards();
+      renderTimeline(
+        "deployment-timeline-chart",
+        data.timeline.byYear,
+        (item) => item.deploymentSchools || 0,
+        (item) => {
+          const topLabels = (item.topDeploymentLabels || [])
+            .map((entry) => `${entry.label} (${entry.count})`)
+            .join(", ");
+          return `
+            <strong>Year ${item.year}</strong>
+            Deployment schools: ${item.deploymentSchools}<br>
+            Deployment rows: ${item.deploymentRows}<br>
+            Training rows in same year: ${item.trainingRows}<br>
+            Overlap with training: ${item.overlapSchools}<br>
+            All activity rows: ${item.activityRows}<br>
+            All school labels: ${item.schools}${topLabels ? `<br>Top deployment labels: ${escapeHtml(topLabels)}` : "<br>Top deployment labels: none"}
+          `;
+        }
+      );
+      appendTimelineFooter("deployment-timeline-footer", [
+        `Counts schools with deployment or upgrade activity`,
+        `${number.format(data.timeline.districtCount)} normalized district labels`,
+        `${number.format(data.timeline.totalEvents)} total dated activity rows in source`,
+      ]);
+      renderTimeline(
+        "training-only-timeline-chart",
+        data.timeline.byYear,
+        (item) => item.uniqueTrainingSchools || 0,
+        (item) => {
+          const topLabels = (item.topUniqueTrainingLabels || [])
+            .map((entry) => `${entry.label} (${entry.count})`)
+            .join(", ");
+          return `
+            <strong>Year ${item.year}</strong>
+            Training-only school/entity labels: ${item.uniqueTrainingSchools}<br>
+            Training rows in year: ${item.trainingRows}<br>
+            Training labels overlapping deployment: ${item.overlapSchools}<br>
+            Deployment schools in same year: ${item.deploymentSchools}<br>
+            All activity rows: ${item.activityRows}${topLabels ? `<br>Top training-only labels: ${escapeHtml(topLabels)}` : "<br>Top training-only labels: none"}
+          `;
+        },
+        "training"
+      );
+      appendTimelineFooter("training-only-timeline-footer", [
+        `Counts training labels not matched to deployment in the same year`,
+        `Useful for spotting standalone training activity or messy labeling`,
+        `Hover any bar for overlap and row context`,
+      ]);
+      document.getElementById("training-summary").textContent = data.trainingInterpretation.summary;
+      appendTrainingKv();
+      renderBarChart("training-categories", data.trainingInterpretation.categories, "count", "category", "", (item) => `Definition: ${item.interpretation} Source: ${SOURCES.timeline}`);
+      renderBarChart("training-pairings", data.trainingInterpretation.projectPairings, "count", "type", "alt", (item) => `Definition: Count of school-year combinations where training appears with ${item.type}. Source: ${SOURCES.timeline}`);
+
+      appendMetricTiles("exam-stats", [
+        { kicker: "Workbooks", value: number.format(data.legacyOutcomes.examArchive.workbooks), definition: "Distinct legacy national exam workbook files included in the exam archive summary.", source: SOURCES.examArchive },
+        { kicker: "School sheets", value: number.format(data.legacyOutcomes.examArchive.schoolSheets), definition: "School-named tabs across the exam workbooks after excluding link, average, and comparison tabs.", source: SOURCES.examArchive },
+        { kicker: "% passed points", value: number.format(data.legacyOutcomes.examArchive.pctPassPoints), definition: "Usable numeric values found in the percent-passed series across school sheets.", source: SOURCES.examArchive },
+        { kicker: "Year span", value: `${data.legacyOutcomes.examArchive.yearStart}-${data.legacyOutcomes.examArchive.yearEnd}`, definition: "Earliest and latest years observed in the extracted exam time series.", source: SOURCES.examArchive },
+      ]);
+      renderBarChart("exam-groups", data.legacyOutcomes.examArchive.groups, "schoolSheets", "group", "blue", (item) => `Definition: Number of school sheets in the ${item.group} workbook group; years ${item.yearStart}-${item.yearEnd}. Source: ${SOURCES.examArchive}`);
+
+      appendMetricTiles("survey-stats", [
+        { kicker: "Respondents", value: number.format(data.legacyOutcomes.graduateSurvey.respondents), definition: "Valid respondent rows in the graduate survey workbook after excluding summary and blank rows.", source: SOURCES.graduateSurvey },
+        { kicker: "Has a job", value: number.format(data.legacyOutcomes.graduateSurvey.hasJob), definition: "Respondents marked yes to having a job in the graduate survey workbook.", source: SOURCES.graduateSurvey },
+        { kicker: "Tech-related job", value: number.format(data.legacyOutcomes.graduateSurvey.techRelatedJob), definition: "Respondents marked yes to doing a computer or technology related job.", source: SOURCES.graduateSurvey },
+        { kicker: "Computer helped job", value: number.format(data.legacyOutcomes.graduateSurvey.computerHelpedJob), definition: "Respondents who said computer skills helped them find a job.", source: SOURCES.graduateSurvey },
+        { kicker: "Went to high school", value: number.format(data.legacyOutcomes.graduateSurvey.wentHighSchool), definition: "Respondents who marked yes to continuing to high school after Form 4.", source: SOURCES.graduateSurvey },
+        { kicker: "Vocational training", value: number.format(data.legacyOutcomes.graduateSurvey.vocationalTraining), definition: "Respondents who marked yes to attending vocational training; free-text institution answers are not separately standardized here.", source: SOURCES.graduateSurvey },
+        { kicker: "College or university", value: number.format(data.legacyOutcomes.graduateSurvey.collegeOrUniversity), definition: "Respondents who marked yes to attending college or university.", source: SOURCES.graduateSurvey },
+        { kicker: "School coverage", value: `${number.format(data.legacyOutcomes.graduateSurvey.schools)} schools`, definition: "Normalized distinct school names represented in the graduate survey respondent rows.", source: SOURCES.graduateSurvey },
+      ]);
+
+      renderBarChart("graduate-years", data.graduates.years, "postSecondaryPlacements", "year", "", (item) => `Definition: Comparable post-secondary placements for ${item.year}, calculated as advance school plus college/university. Source: ${SOURCES.graduateTracking}`);
+      appendSupportCards();
+      appendLearningCards();
+      appendFoundationCards();
+    </script>
+  </body>
+</html>
