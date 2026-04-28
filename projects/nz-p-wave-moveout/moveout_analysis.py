@@ -1,21 +1,19 @@
 """
 moveout_analysis.py
 -------------------
-Loads the downloaded dataset (kaikoura_nz_array.npz), picks the P-wave
-arrival at each station, fits a linear moveout curve, and produces two figures:
+Loads tohoku_nz_array.npz (three-component ZRT data from GeoNet), picks the
+direct P on the vertical and the Moho P-to-S conversion (Ps) on the radial,
+fits a linear moveout curve to each, and produces two figures.
 
-  record_section.png   – seismograms sorted by distance with the fitted
-                         moveout line overlaid
-  moveout_fit.png      – scatter of (distance, arrival time) with linear fit,
-                         residuals, and derived Pn velocity
+Figures
+-------
+record_section.png   – three-panel ZRT record section with P and Ps markers
+                       and fitted moveout lines overlaid
+moveout_fit.png      – P and Ps arrival times vs distance, linear fits,
+                       and the τ_Ps delay that constrains crustal thickness
 
 Run after download_data.py:
     python moveout_analysis.py
-
-Outputs
--------
-record_section.png
-moveout_fit.png
 """
 
 from pathlib import Path
@@ -24,169 +22,220 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 from scipy.optimize import curve_fit
-from scipy.signal import find_peaks
 
-# ── load data ─────────────────────────────────────────────────────────────────
+# ── load ──────────────────────────────────────────────────────────────────────
 
-DATA_FILE = Path("kaikoura_nz_array.npz")
+DATA_FILE = Path("tohoku_nz_array.npz")
 
 data          = np.load(str(DATA_FILE), allow_pickle=True)
-waveforms     = data["waveforms"]          # (N, T)
-distances     = data["distances"]          # km
-stations      = data["stations"]           # "NET.STA"
-times_rel     = data["times_rel"]          # seconds relative to predicted P
+Z             = data["Z"]            # (N, T)
+R             = data["R"]
+T_comp        = data["T"]
+distances     = data["distances"]    # km
+times_rel     = data["times_rel"]    # s relative to predicted P  (0 = P)
+stations      = data["stations"]
 sampling_rate = float(data["sampling_rate"])
 evt_mag       = float(data["evt_mag"])
 evt_dep       = float(data["evt_dep"])
 
-N, T = waveforms.shape
-dt   = 1.0 / sampling_rate
+N, npts = Z.shape
+dt      = 1.0 / sampling_rate
 
-print(f"Loaded {N} stations, {T} samples each ({times_rel[-1]:.0f} s window)")
+print(f"Loaded {N} stations  |  {npts} samples @ {sampling_rate:.0f} sps  "
+      f"|  window {times_rel[0]:.0f} to {times_rel[-1]:.0f} s")
 
-# Sort by distance for clean record section display
-order      = np.argsort(distances)
-waveforms  = waveforms[order]
-distances  = distances[order]
-stations   = stations[order]
-
-
-# ── arrival time picking ───────────────────────────────────────────────────────
-# The waveforms are aligned so that time 0 = predicted P onset (from iasp91).
-# We refine by finding the maximum absolute amplitude in the first 8 seconds
-# after the predicted onset, which catches slight prediction errors.
-
-PICK_WINDOW_START =  0.0   # seconds after predicted P
-PICK_WINDOW_END   =  8.0   # seconds after predicted P
-
-i_start = int((PICK_WINDOW_START - times_rel[0]) * sampling_rate)
-i_end   = int((PICK_WINDOW_END   - times_rel[0]) * sampling_rate)
-i_start = max(0, i_start)
-i_end   = min(T - 1, i_end)
-
-picked_times = np.empty(N)   # seconds relative to event origin
-picked_rel   = np.empty(N)   # seconds relative to predicted P (for plotting)
-
-# Use predicted P time (stored as origin time) to convert picks to absolute s
-# The predicted P at each station is already baked into the alignment, so
-# t_abs = EVT_TIME + p_tt is not directly available here.  Instead we fit
-# using times_rel (relative to predicted P) converted to absolute by adding
-# a per-station offset.  For the linear fit we just use times_rel picks and
-# then add a common baseline later.
-
-for i in range(N):
-    segment = waveforms[i, i_start:i_end]
-    idx_rel = np.argmax(np.abs(segment))
-    picked_rel[i] = times_rel[i_start + idx_rel]
-
-# ── linear moveout fit ────────────────────────────────────────────────────────
-# Model: t_rel(d) = a + d / v_apparent
-# where t_rel is the pick time relative to the predicted P,
-# d is distance in km, and v_apparent is apparent velocity in km/s.
-# A non-zero intercept 'a' absorbs any systematic offset in the theoretical P.
-
-def linear_moveout(dist_km, a, v_app):
-    return a + dist_km / v_app
+# Sort north-to-south (ascending distance for Japan source ≈ northward wave)
+order     = np.argsort(distances)
+Z         = Z[order]
+R         = R[order]
+T_comp    = T_comp[order]
+distances = distances[order]
+stations  = stations[order]
 
 
-p0 = [0.0, 8.0]   # initial guess: 0 s offset, 8 km/s apparent velocity
-popt, pcov = curve_fit(linear_moveout, distances, picked_rel, p0=p0)
-perr = np.sqrt(np.diag(pcov))
+# ── arrival picking ───────────────────────────────────────────────────────────
 
-a_fit, v_fit = popt
-a_err, v_err = perr
-
-residuals = picked_rel - linear_moveout(distances, *popt)
-rmse      = np.sqrt(np.mean(residuals ** 2))
-
-print(f"\n── Moveout fit results ──────────────────────────────")
-print(f"  Apparent Pn velocity : {v_fit:.2f} ± {v_err:.2f} km/s")
-print(f"  Time offset (a)      : {a_fit:.2f} ± {a_err:.2f} s")
-print(f"  RMSE of residuals    : {rmse:.2f} s")
-print(f"  N stations used      : {N}")
+def sample(t_sec: float) -> int:
+    """Convert a time (s relative to P) to a sample index."""
+    return int(round((t_sec - times_rel[0]) * sampling_rate))
 
 
-# ── figure 1: record section ──────────────────────────────────────────────────
+# P window: search for first large peak on Z, 0–8 s after predicted P
+P_SEARCH_START =  0.0
+P_SEARCH_END   =  8.0
+i_ps, i_pe = sample(P_SEARCH_START), sample(P_SEARCH_END)
 
-TRACE_SCALE = 80.0   # km — visual half-amplitude of each normalised trace
+# Ps window: search on radial, 2–10 s AFTER the picked P
+PS_OFFSET_START =  2.0
+PS_OFFSET_END   = 10.0
 
-fig, ax = plt.subplots(figsize=(10, 12))
+p_picks  = np.empty(N)   # s relative to predicted P
+ps_picks = np.empty(N)   # s relative to predicted P
+ps_valid = np.ones(N, dtype=bool)
 
 for i in range(N):
-    d     = distances[i]
-    trace = waveforms[i] * TRACE_SCALE
-    ax.plot(times_rel, trace + d,
-            color="k", linewidth=0.5, alpha=0.7)
-    ax.plot(picked_rel[i], d, "r|", markersize=8, markeredgewidth=1.5)
+    # P: maximum absolute amplitude on Z in search window
+    seg = Z[i, i_ps:i_pe]
+    p_picks[i] = times_rel[i_ps + np.argmax(np.abs(seg))]
 
-# Fitted moveout line
-d_range = np.linspace(distances.min(), distances.max(), 200)
-ax.plot(linear_moveout(d_range, a_fit, v_fit), d_range,
-        color="#e74c3c", linewidth=2.0, linestyle="--",
-        label=f"Linear fit  v = {v_fit:.2f} km/s")
+    # Ps: maximum amplitude on radial in window after picked P
+    j0 = sample(p_picks[i] + PS_OFFSET_START)
+    j1 = sample(p_picks[i] + PS_OFFSET_END)
+    j0 = max(0, j0);  j1 = min(npts - 1, j1)
+    if j1 <= j0:
+        ps_valid[i] = False
+        ps_picks[i] = np.nan
+        continue
+    seg_r = R[i, j0:j1]
+    ps_picks[i] = times_rel[j0 + np.argmax(np.abs(seg_r))]
 
-ax.axvline(0, color="steelblue", linewidth=1.0, linestyle=":",
-           label="Predicted P (iasp91)")
 
-ax.set_xlabel("Time relative to predicted P arrival (s)", fontsize=12)
-ax.set_ylabel("Epicentral distance (km)", fontsize=12)
-ax.set_title(
-    f"P-Wave Record Section — 2016 Kaikoura M{evt_mag} Earthquake\n"
-    f"GeoNet broadband network (NZ)  ·  {N} stations  ·  depth {evt_dep:.0f} km",
-    fontsize=12,
+# ── moveout fitting ───────────────────────────────────────────────────────────
+
+def linear(dist_km, a, v):
+    return a + dist_km / v
+
+
+# Fit P moveout
+popt_p, pcov_p = curve_fit(linear, distances, p_picks, p0=[0.0, 8.0])
+a_p, v_p       = popt_p
+v_p_err        = np.sqrt(pcov_p[1, 1])
+
+# Fit Ps moveout (same slope expected; intercept offset by τ_Ps)
+mask = ps_valid
+popt_ps, pcov_ps = curve_fit(linear, distances[mask], ps_picks[mask], p0=[5.0, 8.0])
+a_ps, v_ps       = popt_ps
+v_ps_err         = np.sqrt(pcov_ps[1, 1])
+
+# τ_Ps at the median distance = time difference between the two lines
+d_mid    = np.median(distances)
+tau_ps   = linear(d_mid, *popt_ps) - linear(d_mid, *popt_p)
+
+# Crustal thickness estimate: τ_Ps ≈ H(√(1/Vs²-p²) − √(1/Vp²-p²))
+# For typical NZ crust (Vp=6.4, Vs=3.7, p≈0.068 s/km at ~75°):
+VP_CRUST  = 6.4
+VS_CRUST  = 3.7
+P_RAY     = 0.068   # s/km — typical at 75°
+eta_S = np.sqrt(max(1/VS_CRUST**2 - P_RAY**2, 0))
+eta_P = np.sqrt(max(1/VP_CRUST**2 - P_RAY**2, 0))
+H_est = tau_ps / (eta_S - eta_P) if (eta_S - eta_P) > 0 else np.nan
+
+print(f"\n── P  moveout  ──  v = {v_p:.2f} ± {v_p_err:.2f} km/s")
+print(f"── Ps moveout  ──  v = {v_ps:.2f} ± {v_ps_err:.2f} km/s")
+print(f"── τ_Ps (median distance) = {tau_ps:.2f} s")
+print(f"── Estimated crustal thickness H ≈ {H_est:.0f} km")
+
+
+# ── figure 1: 3-panel record section ─────────────────────────────────────────
+
+SCALE   = 60.0   # km — visual half-amplitude of each normalised trace
+d_range = np.linspace(distances.min(), distances.max(), 300)
+
+fig, axes = plt.subplots(1, 3, figsize=(16, 11), sharey=True)
+titles = ["Vertical (Z)", "Radial (R)  ← toward event", "Transverse (T)"]
+comps  = [Z, R, T_comp]
+cols   = ["#2c3e50", "#c0392b", "#16a085"]
+
+for ax, comp, title, col in zip(axes, comps, titles, cols):
+    for i in range(N):
+        d     = distances[i]
+        trace = comp[i] * SCALE
+        ax.plot(times_rel, trace + d, color=col, linewidth=0.6, alpha=0.75)
+
+    # P picks (all panels)
+    ax.scatter(p_picks, distances,
+               marker="|", s=80, linewidths=1.5,
+               color="steelblue", zorder=4, label="P pick")
+
+    # Ps picks (radial panel only)
+    if title.startswith("Radial"):
+        ax.scatter(ps_picks[mask], distances[mask],
+                   marker="|", s=80, linewidths=1.5,
+                   color="gold", zorder=4, label="Ps pick")
+
+    # Fitted moveout lines
+    ax.plot(linear(d_range, *popt_p), d_range,
+            color="steelblue", linewidth=1.8, linestyle="--",
+            label=f"P fit  v={v_p:.1f} km/s")
+    if title.startswith("Radial"):
+        ax.plot(linear(d_range, *popt_ps), d_range,
+                color="gold", linewidth=1.8, linestyle="--",
+                label=f"Ps fit  τ={tau_ps:.1f} s")
+
+    ax.axvline(0, color="gray", linewidth=0.8, linestyle=":")
+    ax.set_title(title, fontsize=11)
+    ax.set_xlabel("Time relative to predicted P (s)", fontsize=10)
+    ax.grid(True, alpha=0.25, linewidth=0.5)
+    ax.legend(fontsize=8, loc="upper left")
+    ax.set_xlim(times_rel[0], times_rel[-1])
+
+axes[0].set_ylabel("Epicentral distance (km)", fontsize=11)
+axes[0].invert_yaxis()
+axes[0].set_ylim(distances.max() + 150, distances.min() - 150)
+
+fig.suptitle(
+    f"Three-Component Record Section — 2011 Tohoku M{evt_mag}  "
+    f"(depth {evt_dep:.0f} km)\n"
+    f"GeoNet broadband, NZ  ·  {N} stations  ·  0.5–2 Hz bandpass",
+    fontsize=12, y=1.01,
 )
-ax.legend(fontsize=10, loc="upper left")
-ax.set_xlim(times_rel[0], times_rel[-1])
-ax.set_ylim(distances.min() - 100, distances.max() + 100)
-ax.invert_yaxis()
-ax.grid(True, alpha=0.3, linewidth=0.5)
-
 fig.tight_layout()
 fig.savefig("record_section.png", dpi=150, bbox_inches="tight")
 plt.close(fig)
 print("\nSaved → record_section.png")
 
 
-# ── figure 2: moveout fit + residuals ─────────────────────────────────────────
+# ── figure 2: moveout fit comparison ─────────────────────────────────────────
 
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 9),
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 10),
                                  gridspec_kw={"height_ratios": [3, 1]})
 
-# Top panel: observed picks + fitted line
-ax1.scatter(distances, picked_rel,
-            s=60, zorder=3, color="steelblue", edgecolors="white",
-            linewidths=0.5, label="Observed P picks")
-ax1.plot(d_range, linear_moveout(d_range, a_fit, v_fit),
-         color="#e74c3c", linewidth=2.0,
-         label=f"Linear fit:  t = {a_fit:.2f} + d / {v_fit:.2f}")
+# Top: P and Ps picks with linear fits
+ax1.scatter(distances, p_picks,
+            color="steelblue", s=55, zorder=3, edgecolors="white",
+            linewidths=0.5, label="P picks (Z component)")
+ax1.scatter(distances[mask], ps_picks[mask],
+            color="#e67e22", s=55, zorder=3, edgecolors="white",
+            linewidths=0.5, label="Ps picks (R component)")
 
-ax1.set_ylabel("P pick time relative to predicted P (s)", fontsize=11)
+ax1.plot(d_range, linear(d_range, *popt_p),
+         color="steelblue", linewidth=2,
+         label=f"P linear fit   v = {v_p:.2f} ± {v_p_err:.2f} km/s")
+ax1.plot(d_range, linear(d_range, *popt_ps),
+         color="#e67e22", linewidth=2,
+         label=f"Ps linear fit  v = {v_ps:.2f} ± {v_ps_err:.2f} km/s")
+
+# Annotate τ_Ps
+ax1.annotate(
+    "",
+    xy  =(d_mid, linear(d_mid, *popt_ps)),
+    xytext=(d_mid, linear(d_mid, *popt_p)),
+    arrowprops=dict(arrowstyle="<->", color="gray", lw=1.5),
+)
+ax1.text(d_mid + 60, (linear(d_mid, *popt_p) + linear(d_mid, *popt_ps)) / 2,
+         f"τ_Ps = {tau_ps:.1f} s\n→ H ≈ {H_est:.0f} km",
+         fontsize=10, color="gray", va="center")
+
+ax1.set_ylabel("Arrival time relative to predicted P (s)", fontsize=11)
 ax1.set_title(
-    f"P-Wave Moveout Fit — 2016 Kaikoura M{evt_mag}\n"
-    f"Apparent Pn velocity = {v_fit:.2f} ± {v_err:.2f} km/s",
+    f"P and Ps Moveout — 2011 Tohoku M{evt_mag}\n"
+    f"τ_Ps = {tau_ps:.1f} s  →  crustal thickness H ≈ {H_est:.0f} km",
     fontsize=12,
 )
-ax1.legend(fontsize=10)
+ax1.legend(fontsize=9)
 ax1.grid(True, alpha=0.3)
 
-# Annotate velocity result
-ax1.annotate(
-    f"v$_{{\\mathrm{{app}}}}$ = {v_fit:.2f} ± {v_err:.2f} km/s\n"
-    f"RMSE = {rmse:.2f} s  ·  N = {N}",
-    xy=(0.97, 0.05), xycoords="axes fraction",
-    ha="right", va="bottom", fontsize=10,
-    bbox=dict(boxstyle="round,pad=0.4", facecolor="lightyellow", alpha=0.8),
-)
-
-# Bottom panel: residuals
-ax2.axhline(0, color="k", linewidth=0.8)
-ax2.bar(distances, residuals, width=20, color="steelblue",
-        alpha=0.7, edgecolor="white")
+# Bottom: τ_Ps per station (should be roughly flat)
+tau_per_sta = ps_picks[mask] - p_picks[mask]
+ax2.scatter(distances[mask], tau_per_sta,
+            color="#e67e22", s=40, zorder=3, edgecolors="white", linewidths=0.4)
+ax2.axhline(np.median(tau_per_sta), color="gray", linewidth=1.5, linestyle="--",
+            label=f"Median τ_Ps = {np.median(tau_per_sta):.1f} s")
 ax2.set_xlabel("Epicentral distance (km)", fontsize=11)
-ax2.set_ylabel("Residual (s)", fontsize=11)
-ax2.set_title("Fit Residuals", fontsize=11)
+ax2.set_ylabel("τ_Ps  (s)", fontsize=11)
+ax2.set_title("P-to-Ps Delay Per Station", fontsize=11)
+ax2.legend(fontsize=9)
 ax2.grid(True, alpha=0.3, axis="y")
 
 fig.tight_layout()
