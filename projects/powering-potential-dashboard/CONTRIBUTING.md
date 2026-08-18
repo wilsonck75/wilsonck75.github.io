@@ -26,11 +26,12 @@ This dashboard is developed in
 update gets from one repo to the other.
 
 **Access limitation:** as of this writing, the taxonomy validation, tests,
-CI, split CSS/JS, access gate, and the ongoing activity-log pipeline
-(`DATA_COLLECTION_PROCESS.md`, `data/activity-log.csv`) only exist in this
-repo (`wilsonck75.github.io`), not yet in `D-Cubed-Data-Lab`. Treat this
-repo as the working copy for now. Once `D-Cubed-Data-Lab` is writable
-again, upstream this hardening so both repos share one pipeline.
+CI, split CSS/JS, access gate, and the ongoing activity-log and survey
+pipelines (`DATA_COLLECTION_PROCESS.md`, `SCHOOL_SURVEY_PROCESS.md`,
+`data/activity-log.csv`, `data/survey-*.csv`) only exist in this repo
+(`wilsonck75.github.io`), not yet in `D-Cubed-Data-Lab`. Treat this repo as
+the working copy for now. Once `D-Cubed-Data-Lab` is writable again,
+upstream this hardening so both repos share one pipeline.
 
 ## Logging a new activity (ongoing, going forward)
 
@@ -48,6 +49,26 @@ python3 -m pytest tests/ -v
 ```
 This is the same duplicate-name/required-field validation described below,
 now running against newly logged rows too.
+
+## Recording school outcomes (surveys, ongoing)
+
+For enrollment, exam results, lab usage, or graduate outcomes at a school —
+the data behind a real before/after comparison, not just an activity log
+entry: see **`SCHOOL_SURVEY_PROCESS.md`**. Three survey types, each its own
+CSV: `data/survey-baseline.csv` (once per school), `data/survey-annual.csv`
+(every school year), `data/survey-graduates.csv` (every graduating cohort).
+
+A survey can only reference a school that's already in the system via
+`data/activity-log.csv` — it can't create a new one. The build fails with a
+"did you mean...?" suggestion if a survey's school name doesn't match an
+existing canonical name exactly.
+
+The Program view's "School Outcomes (Survey Rollout)" section
+(`index.html` id `outcomes-section`, rendered by `renderSchoolOutcomes()`
+in `program.js`) shows a coverage summary immediately (how many of the 47
+schools have a baseline/follow-up/before-after pair) and a real before/after
+table for any school that has both. It's designed to show useful content
+(the rollout progress itself) from day one, before any survey data exists.
 
 ## Making a data change (historical xlsx / taxonomy edits)
 
@@ -123,15 +144,16 @@ index.html, dashboard.css, dashboard.js, program-extra.css, program.js,
 access-gate.js, dashboard-data.js, program-data.js, canonical-schools.csv,
 workbench-original.html, build_program_data.py, assemble_index.py,
 requirements.txt, data/Implementation_Timeline_for_Website_2007-2025.xlsx,
-data/school-taxonomy.yml, data/activity-log.csv, tests/
+data/school-taxonomy.yml, data/activity-log.csv, data/survey-baseline.csv,
+data/survey-annual.csv, data/survey-graduates.csv, tests/
 ```
 
-`data/activity-log.csv` is the exception to "publish from the source repo":
-since ongoing logging happens against whichever repo is the working copy
-(currently this one — see "Where things live" above), don't overwrite it
-with an older copy from `D-Cubed-Data-Lab` during a sync. `canonical-schools.csv`
-is always safe to regenerate/overwrite since it's fully derived from
-`program-data.js`.
+`data/activity-log.csv` and the three `data/survey-*.csv` files are the
+exception to "publish from the source repo": since ongoing logging/surveying
+happens against whichever repo is the working copy (currently this one —
+see "Where things live" above), don't overwrite them with an older copy
+from `D-Cubed-Data-Lab` during a sync. `canonical-schools.csv` is always
+safe to regenerate/overwrite since it's fully derived from `program-data.js`.
 
 **Do not hand-edit `program-data.js`, `dashboard.css`, or `dashboard.js` in
 either repo.** They're generated; hand edits will be silently overwritten

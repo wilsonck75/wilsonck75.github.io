@@ -41,10 +41,21 @@ ROOT = Path(__file__).resolve().parent
 TIMELINE = ROOT / "data" / "Implementation_Timeline_for_Website_2007-2025.xlsx"
 TAXONOMY_PATH = ROOT / "data" / "school-taxonomy.yml"
 ACTIVITY_LOG = ROOT / "data" / "activity-log.csv"
+SURVEY_BASELINE = ROOT / "data" / "survey-baseline.csv"
+SURVEY_ANNUAL = ROOT / "data" / "survey-annual.csv"
+SURVEY_GRADUATES = ROOT / "data" / "survey-graduates.csv"
 OUT = ROOT / "program-data.js"
 CANONICAL_SCHOOLS_OUT = ROOT / "canonical-schools.csv"
 
 ACTIVITY_LOG_REQUIRED_COLUMNS = ["Year", "Month", "Implementation", "School", "District", "Country"]
+SURVEY_BASELINE_REQUIRED_COLUMNS = ["School", "SurveyDate", "TotalEnrollment"]
+SURVEY_ANNUAL_REQUIRED_COLUMNS = ["School", "SchoolYear", "SurveyDate", "TotalEnrollment"]
+SURVEY_GRADUATES_REQUIRED_COLUMNS = ["School", "GraduationYear", "SurveyDate", "RespondentCount"]
+
+# A close-enough (but not exact) match against a known school name in a
+# survey row is almost always a typo, not a new school — surveys should
+# never silently create a school. Below this ratio we just say "not found".
+SURVEY_SCHOOL_SUGGESTION_THRESHOLD = 0.6
 
 # Two canonical names with a similarity ratio at or above this threshold are
 # flagged as possible unmerged duplicates unless listed in
@@ -124,6 +135,89 @@ def classify_generation(label: str) -> str | None:
     if "laptop" in s:
         return "Pilot laptop"
     return None
+
+
+def _read_survey_rows(path: Path, required_columns: list[str]) -> list[tuple[int, dict]]:
+    """Read a survey CSV into (row_number, row_dict) pairs, skipping blank
+    rows. Returns [] if the file doesn't exist (the normal state for a
+    survey type nobody has started collecting yet).
+    """
+    if not path.exists():
+        return []
+    with path.open(newline="", encoding="utf-8") as fh:
+        reader = csv.DictReader(fh)
+        missing = [c for c in required_columns if c not in (reader.fieldnames or [])]
+        if missing:
+            raise TaxonomyError(
+                f"{path} is missing required column(s): {missing}. "
+                f"Expected header to include: {','.join(required_columns)}"
+            )
+        rows = []
+        for row_num, row in enumerate(reader, start=2):  # header is row 1
+            if any((v or "").strip() for v in row.values()):
+                rows.append((row_num, row))
+        return rows
+
+
+def _survey_int(row: dict, field: str, *, context: str, required: bool = False) -> int | None:
+    raw = (row.get(field) or "").strip()
+    if not raw:
+        if required:
+            raise TaxonomyError(f"{context} is missing a required value for {field!r}.")
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        raise TaxonomyError(f"{context} has a non-numeric {field}: {raw!r}") from None
+
+
+def _survey_bool(row: dict, field: str) -> bool | None:
+    raw = (row.get(field) or "").strip().lower()
+    if not raw:
+        return None
+    if raw in {"y", "yes", "true", "1"}:
+        return True
+    if raw in {"n", "no", "false", "0"}:
+        return False
+    raise TaxonomyError(f"{field} must be yes/no, got {raw!r}")
+
+
+def _exam_result(row: dict, *, context: str, sat_field: str = "ExamSat", passed_field: str = "ExamPassed") -> dict | None:
+    name = (row.get("ExamName") or "").strip()
+    year = _survey_int(row, "ExamYear", context=context)
+    sat = _survey_int(row, sat_field, context=context)
+    passed = _survey_int(row, passed_field, context=context)
+    if not any([name, year, sat, passed]):
+        return None
+    if sat is not None and passed is not None and passed > sat:
+        raise TaxonomyError(f"{context}: {passed_field} ({passed}) is greater than {sat_field} ({sat}) — check the entry.")
+    pass_rate = round(passed / sat * 100, 1) if (sat and passed is not None) else None
+    return {"name": name or None, "year": year, "sat": sat, "passed": passed, "passRatePct": pass_rate}
+
+
+def resolve_survey_school(raw_name: str, known_names: dict[str, str], *, context: str) -> str:
+    """Map a survey row's School value to an existing canonical school.
+
+    Unlike activity-log rows (which can introduce a brand-new school),
+    surveys should always reference a school that's already in the system —
+    it should have gotten there via its first logged activity, with a
+    taxonomy classification decision already made. A survey row with an
+    unrecognized name is treated as a typo or a missed onboarding step, not
+    a new school, so this raises rather than silently creating one.
+    """
+    name = " ".join(raw_name.split())
+    key = name.lower()
+    if key in known_names:
+        return known_names[key]
+    suggestions = difflib.get_close_matches(key, known_names.keys(), n=3, cutoff=SURVEY_SCHOOL_SUGGESTION_THRESHOLD)
+    hint = f" Did you mean: {', '.join(known_names[s] for s in suggestions)}?" if suggestions else ""
+    raise TaxonomyError(
+        f"{context}: {raw_name!r} is not a known canonical school.{hint} "
+        "Surveys can't introduce a new school — log its first activity in "
+        "data/activity-log.csv (with a taxonomy classification if it's a "
+        "Karatu 23 addition) before surveying it. See DATA_COLLECTION_PROCESS.md "
+        "and SCHOOL_SURVEY_PROCESS.md."
+    )
 
 
 def check_for_unmerged_duplicates(canonical_names: list[str], taxonomy: dict) -> list[tuple[str, str, float]]:
@@ -267,6 +361,155 @@ class Builder:
                     }
                 )
             return events
+
+    def load_baseline_surveys(self, known_names: dict[str, str], path: Path | None = None) -> dict[str, dict]:
+        """One row per school: its baseline survey, if it has one. Returns a
+        dict keyed by canonical school name.
+        """
+        if path is None:
+            path = SURVEY_BASELINE
+        result: dict[str, dict] = {}
+        for row_num, row in _read_survey_rows(path, SURVEY_BASELINE_REQUIRED_COLUMNS):
+            context = f"{path}:{row_num}"
+            school = resolve_survey_school(row["School"], known_names, context=context)
+            if school in result:
+                raise TaxonomyError(f"{context}: {school} already has a baseline survey (row for the same school appears twice).")
+            result[school] = {
+                "school": school,
+                "surveyDate": (row.get("SurveyDate") or "").strip() or None,
+                "surveyedBy": (row.get("SurveyedBy") or "").strip() or None,
+                "totalEnrollment": _survey_int(row, "TotalEnrollment", context=context, required=True),
+                "maleEnrollment": _survey_int(row, "MaleEnrollment", context=context),
+                "femaleEnrollment": _survey_int(row, "FemaleEnrollment", context=context),
+                "gradesServed": (row.get("GradesServed") or "").strip() or None,
+                "teacherCount": _survey_int(row, "TeacherCount", context=context),
+                "existingComputers": _survey_int(row, "ExistingComputers", context=context),
+                "electricityAccess": (row.get("ElectricityAccess") or "").strip() or None,
+                "internetAccess": (row.get("InternetAccess") or "").strip() or None,
+                "exam": _exam_result(row, context=context),
+                "contactName": (row.get("ContactName") or "").strip() or None,
+                "contactPhone": (row.get("ContactPhone") or "").strip() or None,
+                "notes": (row.get("Notes") or "").strip() or None,
+            }
+        return result
+
+    def load_annual_surveys(self, known_names: dict[str, str], path: Path | None = None) -> dict[str, list[dict]]:
+        """Zero or more rows per school, one per school year. Returns a dict
+        keyed by canonical school name, each value sorted by schoolYear.
+        """
+        if path is None:
+            path = SURVEY_ANNUAL
+        result: dict[str, list[dict]] = defaultdict(list)
+        seen_years: dict[str, set[int]] = defaultdict(set)
+        for row_num, row in _read_survey_rows(path, SURVEY_ANNUAL_REQUIRED_COLUMNS):
+            context = f"{path}:{row_num}"
+            school = resolve_survey_school(row["School"], known_names, context=context)
+            year = _survey_int(row, "SchoolYear", context=context, required=True)
+            if year in seen_years[school]:
+                raise TaxonomyError(f"{context}: {school} already has a {year} follow-up survey (duplicate school-year row).")
+            seen_years[school].add(year)
+            result[school].append(
+                {
+                    "schoolYear": year,
+                    "surveyDate": (row.get("SurveyDate") or "").strip() or None,
+                    "surveyedBy": (row.get("SurveyedBy") or "").strip() or None,
+                    "totalEnrollment": _survey_int(row, "TotalEnrollment", context=context, required=True),
+                    "maleEnrollment": _survey_int(row, "MaleEnrollment", context=context),
+                    "femaleEnrollment": _survey_int(row, "FemaleEnrollment", context=context),
+                    "exam": _exam_result(row, context=context),
+                    "labFunctional": _survey_bool(row, "LabFunctional"),
+                    "workingComputers": _survey_int(row, "WorkingComputers", context=context),
+                    "brokenComputers": _survey_int(row, "BrokenComputers", context=context),
+                    "weeklyLabHours": _survey_int(row, "WeeklyLabHours", context=context),
+                    "classesUsingLab": _survey_int(row, "ClassesUsingLab", context=context),
+                    "teacherRefresherNeeded": _survey_bool(row, "TeacherRefresherNeeded"),
+                    "notes": (row.get("Notes") or "").strip() or None,
+                }
+            )
+        return {school: sorted(entries, key=lambda e: e["schoolYear"]) for school, entries in result.items()}
+
+    def load_graduate_surveys(self, known_names: dict[str, str], path: Path | None = None) -> dict[str, list[dict]]:
+        """Zero or more rows per school, one per graduating cohort year."""
+        if path is None:
+            path = SURVEY_GRADUATES
+        result: dict[str, list[dict]] = defaultdict(list)
+        seen_years: dict[str, set[int]] = defaultdict(set)
+        for row_num, row in _read_survey_rows(path, SURVEY_GRADUATES_REQUIRED_COLUMNS):
+            context = f"{path}:{row_num}"
+            school = resolve_survey_school(row["School"], known_names, context=context)
+            year = _survey_int(row, "GraduationYear", context=context, required=True)
+            if year in seen_years[school]:
+                raise TaxonomyError(f"{context}: {school} already has a {year} graduate survey (duplicate school-year row).")
+            seen_years[school].add(year)
+            respondents = _survey_int(row, "RespondentCount", context=context, required=True)
+            counts = {
+                "hasJobCount": _survey_int(row, "HasJobCount", context=context),
+                "techRelatedJobCount": _survey_int(row, "TechRelatedJobCount", context=context),
+                "computerHelpedJobCount": _survey_int(row, "ComputerHelpedJobCount", context=context),
+                "wentHighSchoolCount": _survey_int(row, "WentHighSchoolCount", context=context),
+                "vocationalTrainingCount": _survey_int(row, "VocationalTrainingCount", context=context),
+                "collegeOrUniversityCount": _survey_int(row, "CollegeOrUniversityCount", context=context),
+            }
+            for field, count in counts.items():
+                if count is not None and count > respondents:
+                    raise TaxonomyError(f"{context}: {field} ({count}) is greater than RespondentCount ({respondents}).")
+            result[school].append(
+                {
+                    "graduationYear": year,
+                    "surveyDate": (row.get("SurveyDate") or "").strip() or None,
+                    "surveyedBy": (row.get("SurveyedBy") or "").strip() or None,
+                    "respondentCount": respondents,
+                    **counts,
+                    "notes": (row.get("Notes") or "").strip() or None,
+                }
+            )
+        return {school: sorted(entries, key=lambda e: e["graduationYear"]) for school, entries in result.items()}
+
+    def build_school_outcomes(self, school_list: list[dict]) -> tuple[dict, dict]:
+        """Combine the three survey types into a per-school outcomes record
+        plus a rollout-coverage summary. Raises if a survey references a
+        school not present in school_list (see resolve_survey_school).
+        """
+        known_names = {s["canonicalName"].lower(): s["canonicalName"] for s in school_list}
+        baseline_by_school = self.load_baseline_surveys(known_names)
+        annual_by_school = self.load_annual_surveys(known_names)
+        graduates_by_school = self.load_graduate_surveys(known_names)
+
+        outcomes: dict[str, dict] = {}
+        with_baseline = 0
+        with_followup = 0
+        with_before_after = 0
+        latest_year = None
+        for school in school_list:
+            name = school["canonicalName"]
+            baseline = baseline_by_school.get(name)
+            annual = annual_by_school.get(name, [])
+            graduates = graduates_by_school.get(name, [])
+            if not (baseline or annual or graduates):
+                continue
+            if baseline:
+                with_baseline += 1
+            if annual or graduates:
+                with_followup += 1
+            if baseline and annual:
+                with_before_after += 1
+            for entry in annual:
+                latest_year = entry["schoolYear"] if latest_year is None else max(latest_year, entry["schoolYear"])
+            outcomes[school["schoolId"]] = {
+                "school": name,
+                "baseline": baseline,
+                "annual": annual,
+                "graduates": graduates,
+            }
+
+        coverage = {
+            "totalSchools": len(school_list),
+            "schoolsWithBaseline": with_baseline,
+            "schoolsWithFollowup": with_followup,
+            "schoolsWithBeforeAfter": with_before_after,
+            "latestFollowupYear": latest_year,
+        }
+        return outcomes, coverage
 
     def run(self) -> dict:
         wb = load_workbook(TIMELINE, data_only=True)
@@ -433,6 +676,8 @@ class Builder:
 
         school_list = sorted(schools.values(), key=lambda r: (r["cluster"], r["canonicalName"]))
 
+        school_outcomes, outcomes_coverage = self.build_school_outcomes(school_list)
+
         named_kdp = [s for s in school_list if s["karatu23Role"] in {"KDP 1 installed", "KDP 2 installed"}]
         karatu23 = {
             "denominator": 23,
@@ -561,6 +806,8 @@ class Builder:
             "activityByYear": activity_series,
             "mismatches": mismatches,
             "knownDiscrepancies": known_discrepancies,
+            "schoolOutcomes": school_outcomes,
+            "outcomesCoverage": outcomes_coverage,
             "metricContract": metric_contract,
             "generationKey": [
                 {"name": "Phase 1", "detail": "First-gen lab: 5 desktops, open-source software, RACHEL, basic solar."},
@@ -611,10 +858,16 @@ def main() -> None:
     school_list = payload["schools"]
     events_count = payload["network"]["datedTimelineRows"]
     log_count = payload["network"]["activityLogRows"]
+    coverage = payload["outcomesCoverage"]
     OUT.write_text("window.PROGRAM_DATA = " + json.dumps(payload, indent=2) + ";\n")
     write_canonical_schools_csv(school_list)
     print(f"Wrote {OUT} ({len(school_list)} schools, {events_count} events, {log_count} from activity-log.csv)")
     print(f"Wrote {CANONICAL_SCHOOLS_OUT} ({len(school_list)} rows)")
+    print(
+        f"Survey coverage: {coverage['schoolsWithBaseline']} baseline, "
+        f"{coverage['schoolsWithFollowup']} with a follow-up, "
+        f"{coverage['schoolsWithBeforeAfter']} of {coverage['totalSchools']} schools have a before/after pair"
+    )
 
 
 if __name__ == "__main__":

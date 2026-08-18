@@ -27,6 +27,7 @@ from build_program_data import (  # noqa: E402
     load_taxonomy,
     write_canonical_schools_csv,
 )
+import build_program_data as bpd  # noqa: E402
 
 
 @pytest.fixture(scope="module")
@@ -270,8 +271,6 @@ def test_activity_log_typo_is_caught_by_duplicate_gate(taxonomy, tmp_path):
     fail the same way a messy timeline row would, not silently create a
     second school.
     """
-    import build_program_data as bpd
-
     log_path = write_log(tmp_path, "2026,June,Training,Banjica,Karatu,Tanzania,Typo test,,")
     original_activity_log = bpd.ACTIVITY_LOG
     bpd.ACTIVITY_LOG = log_path
@@ -280,3 +279,144 @@ def test_activity_log_typo_is_caught_by_duplicate_gate(taxonomy, tmp_path):
             build_payload()
     finally:
         bpd.ACTIVITY_LOG = original_activity_log
+
+
+# --- School surveys: baseline / annual follow-up / graduate exit ---------
+
+
+KNOWN_NAMES = {"banjika": "Banjika", "welwel": "Welwel"}
+
+
+def write_csv(tmp_path, filename, header, *rows):
+    path = tmp_path / filename
+    path.write_text(header + "\n" + "".join(row + "\n" for row in rows))
+    return path
+
+
+def test_checked_in_survey_templates_are_empty_and_build_clean(payload):
+    coverage = payload["outcomesCoverage"]
+    assert coverage["schoolsWithBaseline"] == 0
+    assert coverage["schoolsWithFollowup"] == 0
+    assert coverage["schoolsWithBeforeAfter"] == 0
+    assert payload["schoolOutcomes"] == {}
+
+
+def test_baseline_survey_parses_with_exam_pass_rate(builder, tmp_path):
+    path = write_csv(
+        tmp_path,
+        "survey-baseline.csv",
+        "School,SurveyDate,SurveyedBy,TotalEnrollment,MaleEnrollment,FemaleEnrollment,GradesServed,TeacherCount,ExistingComputers,ElectricityAccess,InternetAccess,ExamName,ExamYear,ExamSat,ExamPassed,ContactName,ContactPhone,Notes",
+        "Banjika,2024-01-15,Field Officer,450,230,220,Form 1-4,18,0,Solar,None,CSEE,2023,80,42,Head Teacher,+255700000000,Baseline before upgrade",
+    )
+    result = builder.load_baseline_surveys(KNOWN_NAMES, path=path)
+    assert set(result) == {"Banjika"}
+    entry = result["Banjika"]
+    assert entry["totalEnrollment"] == 450
+    assert entry["exam"] == {"name": "CSEE", "year": 2023, "sat": 80, "passed": 42, "passRatePct": 52.5}
+
+
+def test_annual_survey_sorts_by_school_year(builder, tmp_path):
+    path = write_csv(
+        tmp_path,
+        "survey-annual.csv",
+        "School,SchoolYear,SurveyDate,SurveyedBy,TotalEnrollment,MaleEnrollment,FemaleEnrollment,ExamName,ExamYear,ExamSat,ExamPassed,LabFunctional,WorkingComputers,BrokenComputers,WeeklyLabHours,ClassesUsingLab,TeacherRefresherNeeded,Notes",
+        "Banjika,2027,2027-06-01,FO,480,,,,,,,,,,,,,",
+        "Banjika,2026,2026-06-01,FO,470,,,,,,,,,,,,,",
+    )
+    result = builder.load_annual_surveys(KNOWN_NAMES, path=path)
+    assert [e["schoolYear"] for e in result["Banjika"]] == [2026, 2027]
+
+
+def test_graduate_survey_rejects_count_exceeding_respondents(builder, tmp_path):
+    path = write_csv(
+        tmp_path,
+        "survey-graduates.csv",
+        "School,GraduationYear,SurveyDate,SurveyedBy,RespondentCount,HasJobCount,TechRelatedJobCount,ComputerHelpedJobCount,WentHighSchoolCount,VocationalTrainingCount,CollegeOrUniversityCount,Notes",
+        "Banjika,2026,2026-07-01,FO,10,15,,,,,",
+    )
+    with pytest.raises(TaxonomyError, match="greater than RespondentCount"):
+        builder.load_graduate_surveys(KNOWN_NAMES, path=path)
+
+
+def test_survey_unknown_school_suggests_closest_match(builder, tmp_path):
+    path = write_csv(
+        tmp_path,
+        "survey-baseline.csv",
+        "School,SurveyDate,SurveyedBy,TotalEnrollment,MaleEnrollment,FemaleEnrollment,GradesServed,TeacherCount,ExistingComputers,ElectricityAccess,InternetAccess,ExamName,ExamYear,ExamSat,ExamPassed,ContactName,ContactPhone,Notes",
+        "Banjik,2024-01-15,FO,450,,,,,,,,,,,,,",
+    )
+    with pytest.raises(TaxonomyError, match="Did you mean: Banjika"):
+        builder.load_baseline_surveys(KNOWN_NAMES, path=path)
+
+
+def test_survey_exam_passed_exceeding_sat_raises(builder, tmp_path):
+    path = write_csv(
+        tmp_path,
+        "survey-baseline.csv",
+        "School,SurveyDate,SurveyedBy,TotalEnrollment,MaleEnrollment,FemaleEnrollment,GradesServed,TeacherCount,ExistingComputers,ElectricityAccess,InternetAccess,ExamName,ExamYear,ExamSat,ExamPassed,ContactName,ContactPhone,Notes",
+        "Banjika,2024-01-15,FO,450,,,,,,,,CSEE,2023,50,90,,,",
+    )
+    with pytest.raises(TaxonomyError, match="greater than ExamSat"):
+        builder.load_baseline_surveys(KNOWN_NAMES, path=path)
+
+
+def test_duplicate_school_year_in_annual_survey_raises(builder, tmp_path):
+    path = write_csv(
+        tmp_path,
+        "survey-annual.csv",
+        "School,SchoolYear,SurveyDate,SurveyedBy,TotalEnrollment,MaleEnrollment,FemaleEnrollment,ExamName,ExamYear,ExamSat,ExamPassed,LabFunctional,WorkingComputers,BrokenComputers,WeeklyLabHours,ClassesUsingLab,TeacherRefresherNeeded,Notes",
+        "Banjika,2026,2026-06-01,FO,470,,,,,,,,,,,,,",
+        "Banjika,2026,2026-06-15,FO,472,,,,,,,,,,,,,",
+    )
+    with pytest.raises(TaxonomyError, match="already has a 2026 follow-up survey"):
+        builder.load_annual_surveys(KNOWN_NAMES, path=path)
+
+
+def test_build_school_outcomes_computes_coverage_and_before_after(builder, taxonomy, tmp_path):
+    baseline_path = write_csv(
+        tmp_path,
+        "survey-baseline.csv",
+        "School,SurveyDate,SurveyedBy,TotalEnrollment,MaleEnrollment,FemaleEnrollment,GradesServed,TeacherCount,ExistingComputers,ElectricityAccess,InternetAccess,ExamName,ExamYear,ExamSat,ExamPassed,ContactName,ContactPhone,Notes",
+        "Banjika,2024-01-15,FO,450,,,,,,,,CSEE,2023,80,42,,,",
+    )
+    annual_path = write_csv(
+        tmp_path,
+        "survey-annual.csv",
+        "School,SchoolYear,SurveyDate,SurveyedBy,TotalEnrollment,MaleEnrollment,FemaleEnrollment,ExamName,ExamYear,ExamSat,ExamPassed,LabFunctional,WorkingComputers,BrokenComputers,WeeklyLabHours,ClassesUsingLab,TeacherRefresherNeeded,Notes",
+        "Banjika,2026,2026-06-01,FO,470,,,CSEE,2025,85,58,yes,20,0,25,6,no,",
+    )
+    original_baseline, original_annual = bpd.SURVEY_BASELINE, bpd.SURVEY_ANNUAL
+    bpd.SURVEY_BASELINE, bpd.SURVEY_ANNUAL = baseline_path, annual_path
+    try:
+        payload = build_payload()
+    finally:
+        bpd.SURVEY_BASELINE, bpd.SURVEY_ANNUAL = original_baseline, original_annual
+
+    coverage = payload["outcomesCoverage"]
+    assert coverage["schoolsWithBaseline"] == 1
+    assert coverage["schoolsWithFollowup"] == 1
+    assert coverage["schoolsWithBeforeAfter"] == 1
+    assert coverage["latestFollowupYear"] == 2026
+    banjika_outcomes = payload["schoolOutcomes"]["banjika"]
+    assert banjika_outcomes["baseline"]["exam"]["passRatePct"] == 52.5
+    assert banjika_outcomes["annual"][0]["exam"]["passRatePct"] == 68.2
+
+
+def test_survey_referencing_school_not_in_taxonomy_fails_the_full_build(tmp_path):
+    """A survey can't be the way a school first enters the system — it
+    must already exist via activity-log.csv (and taxonomy classification
+    if needed).
+    """
+    baseline_path = write_csv(
+        tmp_path,
+        "survey-baseline.csv",
+        "School,SurveyDate,SurveyedBy,TotalEnrollment,MaleEnrollment,FemaleEnrollment,GradesServed,TeacherCount,ExistingComputers,ElectricityAccess,InternetAccess,ExamName,ExamYear,ExamSat,ExamPassed,ContactName,ContactPhone,Notes",
+        "A School Nobody Logged Yet,2024-01-15,FO,450,,,,,,,,,,,,,,",
+    )
+    original_baseline = bpd.SURVEY_BASELINE
+    bpd.SURVEY_BASELINE = baseline_path
+    try:
+        with pytest.raises(TaxonomyError, match="not a known canonical school"):
+            build_payload()
+    finally:
+        bpd.SURVEY_BASELINE = original_baseline
