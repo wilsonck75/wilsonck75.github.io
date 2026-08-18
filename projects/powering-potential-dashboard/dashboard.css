@@ -815,3 +815,69 @@
         color: #7a1d1d;
         line-height: 1.5;
       }
+
+      /* Board-only access gate (see access-gate.js) */
+      body.gate-locked .page {
+        display: none;
+      }
+      #access-gate {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background:
+          radial-gradient(circle at top left, rgba(13, 106, 99, 0.12), transparent 28%),
+          radial-gradient(circle at 85% 8%, rgba(186, 122, 31, 0.15), transparent 24%),
+          linear-gradient(180deg, #f2eadf 0%, #e8ddd0 100%);
+        z-index: 100;
+      }
+      .access-gate-card {
+        width: min(420px, 100%);
+        padding: 32px;
+        border-radius: 28px;
+        background: var(--paper-strong);
+        box-shadow: var(--shadow);
+        border: 1px solid rgba(80, 93, 109, 0.12);
+        text-align: center;
+      }
+      .access-gate-card h1 {
+        margin: 0 0 10px;
+        font-size: 1.5rem;
+      }
+      .access-gate-card > p {
+        margin: 0 0 20px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      #access-gate-form {
+        display: flex;
+        gap: 8px;
+      }
+      #access-gate-input {
+        flex: 1;
+        font: inherit;
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: 1px solid rgba(80, 93, 109, 0.24);
+      }
+      #access-gate-form button {
+        border: 0;
+        border-radius: 12px;
+        padding: 10px 18px;
+        background: var(--teal);
+        color: white;
+        font: inherit;
+        cursor: pointer;
+      }
+      .access-gate-error {
+        min-height: 1.2em;
+        margin: 12px 0 0;
+        color: #9d2626;
+        font-size: 0.9rem;
+      }
+      .access-gate-note {
+        margin: 6px 0 0 !important;
+        font-size: 0.82rem;
+      }

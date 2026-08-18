@@ -3,10 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Board/staff working view, not a public communications page: keep it
+         out of search results. See PRIVACY_REVIEW.md. -->
+    <meta name="robots" content="noindex, nofollow">
     <title>Powering Potential Program Dashboard</title>
     <link rel="stylesheet" href="./dashboard.css">
   </head>
-  <body>
+  <body class="gate-locked">
 
     <div class="page">
       <section class="hero">
@@ -234,6 +237,7 @@
       </section>
     </div>
 
+    <script src="./access-gate.js"></script>
     <script src="./dashboard-data.js"></script>
     <script src="./program-data.js"></script>
     <script src="./sync-metadata.js"></script>

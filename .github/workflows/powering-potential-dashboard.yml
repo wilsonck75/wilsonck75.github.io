@@ -58,8 +58,10 @@ jobs:
             exit 1
           fi
 
-      - name: Syntax-check dashboard.js
-        run: node --check dashboard.js
+      - name: Syntax-check dashboard.js and access-gate.js
+        run: |
+          node --check dashboard.js
+          node --check access-gate.js
 
       - name: Syntax-check dashboard-data.js and program-data.js
         run: |

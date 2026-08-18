@@ -50,31 +50,46 @@ Everything rendered by `program-data.js` and `dashboard-data.js` is
   but confirm they are not separately, accidentally made public elsewhere
   (e.g. attached to a public Google Drive link).
 
-## Audience decision (open — needs Charlie/Caitlin sign-off)
+## Audience decision — RESOLVED: board-only, first pass (2026-08-18)
 
-The dashboard is currently published at a public URL
-(https://wilsonck75.github.io/projects/powering-potential-dashboard/) with
-no access control, same as the rest of the portfolio site. That may be
-intentional (radical transparency with donors) or may not be what's wanted
-for a document that visibly disputes the org's own public 130/42K/50%/58%
-figures. This needs an explicit decision, not a default:
+Charlie confirmed this dashboard is board-only and this iteration is a
+first pass. Implemented accordingly:
 
-- **Public** (current state): anyone with the link can view it, including
-  donors, other board members, and search engines (unless blocked via
-  `robots.txt`/`noindex`).
-- **Board/staff-only**: would require either (a) moving the dashboard to a
-  private repo + GitHub Pages with access restricted to an org, (b) putting
-  it behind a simple shared passphrase/link-obscurity approach, or (c)
-  hosting it somewhere with real auth (e.g. a Google Site restricted to the
-  org, or a password-protected Netlify/Vercel deploy).
+- **`<meta name="robots" content="noindex, nofollow">`** on the page, plus
+  a repo-level `robots.txt` disallowing the path, so well-behaved search
+  engines won't index or crawl it.
+- **A shared-passphrase gate** (`access-gate.js`): the page content is
+  hidden behind a passphrase prompt until the correct shared passphrase is
+  entered; the unlock is remembered for that browser tab's session.
 
-Until this is decided, treat the current public URL as the default and
-avoid adding anything more sensitive than what's described above (e.g. do
-not add individual student records, names, or photos to this dashboard).
+**Read this before relying on it as real security.** GitHub Pages serves
+this entire repo as public static files — there is no server to enforce
+access control. The passphrase gate is a deterrent, not a security
+boundary:
+
+- `dashboard-data.js` and `program-data.js` (the actual data) are still
+  directly fetchable by URL by anyone who knows or guesses the filename,
+  gate or not. This is acceptable *today* because that data is already
+  school/cohort-level aggregates per the review above — there's nothing in
+  those files more sensitive than what the gate is protecting.
+- The passphrase's SHA-256 hash is visible in `access-gate.js` source; a
+  weak, guessable passphrase could be brute-forced offline. Use a
+  passphrase that isn't in a common wordlist, and rotate it (see
+  `CONTRIBUTING.md`) if a non-board member gets it.
+- `noindex`/`robots.txt` only stop compliant crawlers; anyone with the
+  direct URL can still open it (that's what the passphrase gate is for).
+
+**If the dashboard's content ever gets more sensitive** than aggregate
+school/cohort data (e.g. individual student records get added, which
+should not happen per the recommendation below), this gate is not
+sufficient and the dashboard should move to real auth — e.g. Cloudflare
+Access in front of the Pages site (free for small teams, email-based
+one-time codes), or a private host with proper login.
 
 ## Recommendation
 
 No changes are needed to what's currently displayed — everything is already
-school/cohort-level aggregate data. The action item is the audience
-decision above, which is a board decision, not something to resolve
-unilaterally in a code change.
+school/cohort-level aggregate data, and should stay that way while this
+lightweight gate is the only access control (do not add individual student
+records, names, or photos to this dashboard under the current setup).
+Revisit this page once the dashboard graduates past "first pass."

@@ -96,7 +96,7 @@ to this repo's `projects/powering-potential-dashboard/`, then update
 
 ```
 index.html, dashboard.css, dashboard.js, program-extra.css, program.js,
-dashboard-data.js, program-data.js, workbench-original.html,
+access-gate.js, dashboard-data.js, program-data.js, workbench-original.html,
 build_program_data.py, assemble_index.py, requirements.txt,
 data/Implementation_Timeline_for_Website_2007-2025.xlsx,
 data/school-taxonomy.yml, tests/
@@ -105,6 +105,29 @@ data/school-taxonomy.yml, tests/
 **Do not hand-edit `program-data.js`, `dashboard.css`, or `dashboard.js` in
 either repo.** They're generated; hand edits will be silently overwritten
 (or, in CI, flagged as drift) the next time someone runs the build scripts.
+
+## Managing the board-only access gate
+
+The dashboard sits behind a shared-passphrase gate (`access-gate.js`) —
+see `PRIVACY_REVIEW.md` for what this does and doesn't protect against.
+
+**Default passphrase (first pass): `ppi-board-2026`.** Change this before
+sharing the link widely.
+
+To change the passphrase:
+1. Pick a new passphrase (not something guessable/in a common wordlist).
+2. Compute its SHA-256 hex digest:
+   ```bash
+   python3 -c "import hashlib; print(hashlib.sha256(b'your-new-passphrase').hexdigest())"
+   ```
+3. Replace the `PASSPHRASE_SHA256` constant near the top of
+   `access-gate.js` with the new hash.
+4. Regenerate/publish as usual. Share the new passphrase with the board out
+   of band (Slack/email/in person) — never commit the plaintext passphrase.
+
+Anyone who already has the passphrase (or an unlocked browser session) has
+access until they clear their browser's `sessionStorage` or you rotate the
+hash. Rotate it immediately if a non-board member gets the passphrase.
 
 ## Usage analytics (opt-in)
 
