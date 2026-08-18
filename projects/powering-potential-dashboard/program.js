@@ -220,6 +220,67 @@
         ].map(([k, v]) => `<div class="metric-tile"><div class="metric-kicker">${k}</div><div class="metric-value">${v}</div></div>`).join("");
       }
 
+      function examCell(exam) {
+        if (!exam || exam.passRatePct == null) return "—";
+        return `${exam.passRatePct}% <span class="panel-copy" style="display:inline;font-size:0.82rem;">(${exam.passed}/${exam.sat}${exam.year ? `, ${exam.year}` : ""})</span>`;
+      }
+
+      function renderSchoolOutcomes() {
+        const coverage = program.outcomesCoverage;
+        const outcomes = program.schoolOutcomes || {};
+        if (!coverage) return;
+
+        document.getElementById("outcomes-coverage-stats").innerHTML = [
+          { kicker: "Schools with a baseline survey", value: `${coverage.schoolsWithBaseline} of ${coverage.totalSchools}` },
+          { kicker: "Schools with any follow-up", value: `${coverage.schoolsWithFollowup} of ${coverage.totalSchools}` },
+          { kicker: "Schools with a before/after pair", value: `${coverage.schoolsWithBeforeAfter} of ${coverage.totalSchools}` },
+          { kicker: "Latest follow-up school year", value: coverage.latestFollowupYear ?? "—" },
+        ].map((item) => `
+          <div class="metric-tile">
+            <div class="metric-kicker">${item.kicker}</div>
+            <div class="metric-value">${item.value}</div>
+          </div>
+        `).join("");
+
+        const withData = Object.values(outcomes).filter((o) => o.baseline || o.annual.length);
+        const emptyState = document.getElementById("outcomes-empty-state");
+        const tableWrap = document.getElementById("outcomes-table-wrap");
+
+        if (!withData.length) {
+          emptyState.textContent = "No survey data yet. Once a school has a baseline and at least one annual follow-up survey (see SCHOOL_SURVEY_PROCESS.md), it shows up here with real before/after numbers.";
+          emptyState.classList.remove("hidden");
+          tableWrap.classList.add("hidden");
+          return;
+        }
+        emptyState.classList.add("hidden");
+        tableWrap.classList.remove("hidden");
+
+        const rows = withData
+          .sort((a, b) => a.school.localeCompare(b.school))
+          .map((o) => {
+            const latestAnnual = o.annual[o.annual.length - 1];
+            const beforeEnroll = o.baseline ? o.baseline.totalEnrollment ?? "—" : "—";
+            const afterEnroll = latestAnnual ? latestAnnual.totalEnrollment ?? "—" : "—";
+            const beforeExam = examCell(o.baseline && o.baseline.exam);
+            const afterExam = examCell(latestAnnual && latestAnnual.exam);
+            const labStatus = latestAnnual && latestAnnual.labFunctional != null
+              ? (latestAnnual.labFunctional ? "Functional" : "Not functional")
+              : "—";
+            return `<tr>
+              <td>${o.school}</td>
+              <td>${beforeEnroll}</td>
+              <td>${afterEnroll}</td>
+              <td>${beforeExam}</td>
+              <td>${afterExam}</td>
+              <td>${labStatus}</td>
+            </tr>`;
+          });
+        document.getElementById("outcomes-table").innerHTML = [
+          `<tr><th>School</th><th>Enrollment (baseline)</th><th>Enrollment (latest)</th><th>Exam pass rate (baseline)</th><th>Exam pass rate (latest)</th><th>Lab status (latest)</th></tr>`,
+          ...rows,
+        ].join("");
+      }
+
       function downloadCsv() {
         const cols = ["schoolId", "canonicalName", "cluster", "district", "country", "status", "siteType", "currentGeneration", "firstYear", "latestYear", "computers", "inKaratu23", "karatu23Role"];
         const lines = [cols.join(",")];
@@ -248,4 +309,5 @@
       renderActivity();
       renderKeyPanels();
       renderProgramOutcomes();
+      renderSchoolOutcomes();
       setView(location.hash === "#workbench" ? "workbench" : "program");

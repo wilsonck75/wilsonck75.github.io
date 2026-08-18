@@ -1,5 +1,5 @@
 window.PROGRAM_DATA = {
-  "generatedAt": "2026-08-18T01:51:39Z",
+  "generatedAt": "2026-08-18T02:10:25Z",
   "sources": {
     "timeline": "Implementation Timeline for Website_2007-2025.xlsx",
     "keyTab": "AJ Poole / Albin meeting notes in the Key tab and PEF Solution Generations Specification",
@@ -1578,6 +1578,14 @@ window.PROGRAM_DATA = {
       "status": "open"
     }
   ],
+  "schoolOutcomes": {},
+  "outcomesCoverage": {
+    "totalSchools": 47,
+    "schoolsWithBaseline": 0,
+    "schoolsWithFollowup": 0,
+    "schoolsWithBeforeAfter": 0,
+    "latestFollowupYear": null
+  },
   "metricContract": [
     {
       "metric": "School served",
