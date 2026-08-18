@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /projects/powering-potential-dashboard/
+
+Sitemap: https://wilsonck75.github.io/sitemap.xml

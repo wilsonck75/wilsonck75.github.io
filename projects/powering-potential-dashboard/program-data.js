@@ -1,5 +1,5 @@
 window.PROGRAM_DATA = {
-  "generatedAt": "2026-08-17T21:26:39Z",
+  "generatedAt": "2026-08-18T00:57:05Z",
   "sources": {
     "timeline": "Implementation Timeline for Website_2007-2025.xlsx",
     "keyTab": "AJ Poole / Albin meeting notes in the Key tab and PEF Solution Generations Specification",
@@ -1512,6 +1512,69 @@ window.PROGRAM_DATA = {
       "severity": "low",
       "title": "Public 130 / 42K / 50% / 58% are not these tables",
       "detail": "113 dated activity rows are not unique projects. The graduate survey is 270 respondents, not an organization-wide rate."
+    },
+    {
+      "severity": "medium",
+      "title": "Official Karatu 23 school list not yet confirmed",
+      "detail": "Gyekrum Arusha, Kainam, and the remaining unnamed slots are placeholders until PEF confirms the official 23-school list."
+    }
+  ],
+  "knownDiscrepancies": [
+    {
+      "id": "karatu23-definition",
+      "severity": "high",
+      "title": "Two different meanings of \u201c11 of 23\u201d",
+      "detail": "The public Karatu tile and the equipment file mean KDP 1 (7) + KDP 2 (4). The By Region tab also totals 11 Karatu schools, but those are the original 6 plus five 2023 schools, omitting Upper Kitete and the 2025 four.",
+      "owner": "AJ Poole",
+      "status": "open"
+    },
+    {
+      "id": "kdp1-count-mismatch",
+      "severity": "high",
+      "title": "KDP 1 is 7 in equipment, 6 on the timeline",
+      "detail": "Named 2023 SPARC+ schools: Mlimani Sumawe, Domel, Endabash, Chaenda, Oldeani, Upper Kitete. Gyekrum Arusha is in the AOF proposal with Upper Kitete but has no By Date install row.",
+      "owner": "AJ Poole",
+      "status": "open"
+    },
+    {
+      "id": "2024-gap",
+      "severity": "medium",
+      "title": "2024 has no timeline rows",
+      "detail": "Treat 2024 as not logged, not as a year with zero impact.",
+      "owner": "Charlie Wilson",
+      "status": "open"
+    },
+    {
+      "id": "2025-training-pending",
+      "severity": "medium",
+      "title": "2025 four schools have no training rows yet",
+      "detail": "Diego, Kilimatembo, Kilimamoja, and Marang are logged as SPARC+ Installation only.",
+      "owner": "Caitlin Kelley",
+      "status": "open"
+    },
+    {
+      "id": "kainam-off-timeline",
+      "severity": "medium",
+      "title": "Kainam is not on the timeline",
+      "detail": "The March 2026 site survey shows a Karatu lab in progress that the implementation workbook does not list.",
+      "owner": "AJ Poole",
+      "status": "open"
+    },
+    {
+      "id": "public-figures-not-tables",
+      "severity": "low",
+      "title": "Public 130 / 42K / 50% / 58% are not these tables",
+      "detail": "113 dated activity rows are not unique projects. The graduate survey is 270 respondents, not an organization-wide rate.",
+      "owner": "Charlie Wilson",
+      "status": "wontfix (intentional - public figures kept as-is until denominators exist)"
+    },
+    {
+      "id": "official-23-list-pending",
+      "severity": "medium",
+      "title": "Official Karatu 23 school list not yet confirmed",
+      "detail": "Gyekrum Arusha, Kainam, and the remaining unnamed slots are placeholders until PEF confirms the official 23-school list.",
+      "owner": "PEF",
+      "status": "open"
     }
   ],
   "metricContract": [
