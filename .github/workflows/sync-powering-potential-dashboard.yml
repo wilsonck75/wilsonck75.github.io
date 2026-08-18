@@ -1,0 +1,137 @@
+name: Sync Powering Potential dashboard data
+
+# Removes the manual "clone the source repo and copy files by hand" step
+# for keeping the dashboard's underlying data current.
+#
+# Design note: this only syncs the raw timeline workbook, not code. The
+# dashboard code here (build_program_data.py, assemble_index.py, tests/,
+# data/school-taxonomy.yml, dashboard.css/js split, etc.) has been hardened
+# beyond what exists in the source repo (wilsonck75/D-Cubed-Data-Lab), which
+# this workflow does not have write access to. Blindly copying that repo's
+# files here would silently revert that hardening. Instead, when the source
+# repo's timeline xlsx changes, this workflow copies just the workbook and
+# regenerates program-data.js with THIS repo's own (more robust) pipeline,
+# then opens a PR for review. Once D-Cubed-Data-Lab can be updated too, this
+# workflow (and CONTRIBUTING.md) should be revisited so the two repos share
+# one pipeline again.
+on:
+  schedule:
+    - cron: "0 13 * * 1" # Mondays 13:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  SOURCE_REPO: wilsonck75/D-Cubed-Data-Lab
+  SOURCE_SUBPATH: powering-potential-dashboard
+  DASHBOARD_DIR: projects/powering-potential-dashboard
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@v4
+        with:
+          path: portfolio
+
+      - name: Check out source repo (public, read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SOURCE_REPO }}
+          path: source
+          fetch-depth: 1
+
+      - name: Record source commit
+        id: source
+        working-directory: source
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "short=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether the timeline workbook changed
+        id: diff
+        run: |
+          UPSTREAM="source/${SOURCE_SUBPATH}/data/Implementation_Timeline_for_Website_2007-2025.xlsx"
+          LOCAL="portfolio/${DASHBOARD_DIR}/data/Implementation_Timeline_for_Website_2007-2025.xlsx"
+          if [ ! -f "$UPSTREAM" ]; then
+            echo "::error::upstream workbook not found at $UPSTREAM"
+            exit 1
+          fi
+          if [ -f "$LOCAL" ] && cmp -s "$UPSTREAM" "$LOCAL"; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Timeline workbook is unchanged since the last sync."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Timeline workbook differs from the last synced copy."
+          fi
+
+      - name: Copy updated workbook
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          cp "source/${SOURCE_SUBPATH}/data/Implementation_Timeline_for_Website_2007-2025.xlsx" \
+             "portfolio/${DASHBOARD_DIR}/data/Implementation_Timeline_for_Website_2007-2025.xlsx"
+
+      - name: Set up Python
+        if: steps.diff.outputs.changed == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rebuild program-data.js with this repo's own pipeline
+        if: steps.diff.outputs.changed == 'true'
+        working-directory: portfolio/${{ env.DASHBOARD_DIR }}
+        run: |
+          pip install -r requirements.txt
+          python3 -m pytest tests/ -v
+          python3 build_program_data.py
+
+      - name: Write sync metadata stamp
+        if: steps.diff.outputs.changed == 'true'
+        working-directory: portfolio/${{ env.DASHBOARD_DIR }}
+        run: |
+          SYNCED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          cat > sync-metadata.js <<EOF
+          // Written by .github/workflows/sync-powering-potential-dashboard.yml
+          // each time it pulls an updated timeline workbook from the source
+          // repo. Safe to edit by hand if you publish a manual update
+          // outside that workflow.
+          window.SYNC_METADATA = {
+            sourceRepo: "${SOURCE_REPO}",
+            sourcePath: "${SOURCE_SUBPATH}/data/Implementation_Timeline_for_Website_2007-2025.xlsx",
+            sourceCommit: "${{ steps.source.outputs.sha }}",
+            sourceCommitShort: "${{ steps.source.outputs.short }}",
+            syncedAt: "${SYNCED_AT}",
+          };
+          EOF
+
+      - name: Open pull request
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          path: portfolio
+          commit-message: "Sync Powering Potential timeline data from D-Cubed-Data-Lab@${{ steps.source.outputs.short }}"
+          branch: automation/sync-powering-potential-timeline
+          title: "Sync Powering Potential timeline data (source @ ${{ steps.source.outputs.short }})"
+          labels: automated-sync
+          body: |
+            Automated sync: the implementation timeline workbook changed in
+            [D-Cubed-Data-Lab](https://github.com/${{ env.SOURCE_REPO }}) at
+            commit [`${{ steps.source.outputs.short }}`](https://github.com/${{ env.SOURCE_REPO }}/commit/${{ steps.source.outputs.sha }}).
+
+            This PR copies the updated workbook and regenerates
+            `program-data.js` using this repo's own `build_program_data.py`
+            (which includes the school-taxonomy validation and golden tests
+            that don't exist upstream yet). The tests ran as part of this
+            workflow and passed before this PR was opened.
+
+            **Please review before merging:**
+            - The diff in `program-data.js`, especially the Karatu 23 numbers
+              (`karatu23.progressLabel`) and total school count.
+            - Whether any new/renamed schools in the diff need an entry in
+              `data/school-taxonomy.yml` (the workflow's own tests would have
+              failed the run if a likely-duplicate name was introduced, but
+              a genuinely new school still needs a human classification call
+              for Karatu 23 membership, cluster, etc.).
