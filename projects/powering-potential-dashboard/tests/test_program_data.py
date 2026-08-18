@@ -1,0 +1,162 @@
+"""Golden-value and data-quality tests for the Program dashboard data build.
+
+Run with `pytest` from powering-potential-dashboard/ (after `pip install -r
+requirements.txt`). These tests exist to protect the specific numbers the
+board is relying on (e.g. Karatu 23 -> "11 of 23") from silently changing
+when the underlying timeline xlsx or taxonomy is edited, and to catch
+unmerged school-name duplicates before they reach the dashboard.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import sys
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from build_program_data import (  # noqa: E402
+    TaxonomyError,
+    build_payload,
+    check_for_unmerged_duplicates,
+    load_taxonomy,
+)
+
+
+@pytest.fixture(scope="module")
+def payload() -> dict:
+    return build_payload()
+
+
+@pytest.fixture(scope="module")
+def taxonomy() -> dict:
+    return load_taxonomy()
+
+
+# --- Golden values: the exact facts the board has been told -----------------
+
+
+def test_karatu_23_progress_label_is_11_of_23(payload):
+    assert payload["karatu23"]["progressLabel"] == "11 of 23"
+    assert payload["karatu23"]["denominator"] == 23
+    assert payload["karatu23"]["progressForBar"] == 11
+
+
+def test_karatu_23_is_kdp1_plus_kdp2(payload):
+    k23 = payload["karatu23"]
+    assert k23["kdp1EquipmentCount"] == 7
+    assert k23["kdp2Named"] == 4
+    assert k23["installedNamed"] == k23["kdp1Named"] + k23["kdp2Named"]
+
+
+def test_original_karatu_6_are_excluded_from_the_23(payload):
+    original = set(payload["karatu23"]["originalBase"])
+    assert original == {"Banjika", "Welwel", "Florian", "Slahamo", "Endallah", "Baray"}
+    karatu23_names = {row["name"] for row in payload["karatu23"]["rows"]}
+    assert original.isdisjoint(karatu23_names), (
+        "Original 6 Karatu schools must never appear in the Karatu 23 rows "
+        "(AJ Poole Key tab: installed base is not part of the 23)."
+    )
+    for school in payload["schools"]:
+        if school["canonicalName"] in original:
+            assert school["inKaratu23"] is False
+
+
+def test_canonical_school_count_is_stable(payload):
+    # 47 as of the 2007-2025 timeline extract. If this changes, confirm the
+    # change is expected (new school added/removed) before updating the
+    # expected count here.
+    assert payload["network"]["canonicalSchools"] == 47
+
+
+def test_training_is_never_plus_one_school(payload):
+    contract = {item["metric"]: item["definition"] for item in payload["metricContract"]}
+    assert "Training" in contract
+    assert "not +1 school" in contract["Training"] or "never +1 school" in contract["Training"].lower()
+
+
+def test_public_headline_figures_are_flagged_not_endorsed(payload):
+    assert any("42K" in m["title"] or "130" in m["detail"] or "42" in m["detail"] for m in payload["mismatches"]), (
+        "Expected a mismatch entry noting the public 130/42K/50%/58% figures "
+        "are not yet backed by these tables."
+    )
+
+
+# --- Structural invariants ----------------------------------------------
+
+
+def test_every_school_has_required_fields(payload):
+    required = {"schoolId", "canonicalName", "cluster", "status", "siteType"}
+    for school in payload["schools"]:
+        missing = required - school.keys()
+        assert not missing, f"{school.get('canonicalName')} is missing fields: {missing}"
+
+
+def test_no_duplicate_school_ids(payload):
+    ids = [s["schoolId"] for s in payload["schools"]]
+    dupes = {i for i in ids if ids.count(i) > 1}
+    assert not dupes, f"Duplicate schoolId values: {dupes}"
+
+
+def test_known_discrepancies_have_owner_and_status(payload):
+    assert payload["knownDiscrepancies"], "expected at least one known discrepancy to be tracked"
+    for item in payload["knownDiscrepancies"]:
+        for field in ("id", "severity", "title", "detail", "owner", "status"):
+            assert item.get(field), f"known discrepancy {item.get('id')} missing {field}"
+
+
+def test_generated_at_is_iso8601_utc(payload):
+    assert re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", payload["generatedAt"])
+
+
+# --- Data-quality gate ----------------------------------------------------
+
+
+def test_no_unmerged_name_duplicates_in_current_taxonomy(payload, taxonomy):
+    canonical_names = [s["canonicalName"] for s in payload["schools"]]
+    suspects = check_for_unmerged_duplicates(canonical_names, taxonomy)
+    assert not suspects, (
+        "Possible unmerged school-name duplicates: "
+        f"{suspects}. Add an alias or a confirmed_distinct_pairs entry in "
+        "data/school-taxonomy.yml."
+    )
+
+
+def test_duplicate_detector_actually_catches_variants():
+    """Sanity check that the detector isn't a no-op (catches an obvious typo)."""
+    suspects = check_for_unmerged_duplicates(["Banjika", "Banjik", "Unrelated School"], {})
+    assert suspects, "detector should flag 'Banjika' vs 'Banjik' as a likely duplicate"
+
+
+def test_confirmed_distinct_pairs_are_silenced(taxonomy):
+    pair = taxonomy["confirmed_distinct_pairs"][0]["names"]
+    suspects = check_for_unmerged_duplicates(pair, taxonomy)
+    assert not suspects, "confirmed_distinct_pairs entries must not be flagged"
+
+
+# --- Reproducibility: committed program-data.js matches a fresh build ----
+
+
+def test_committed_program_data_matches_fresh_build(payload):
+    """Guards against hand-editing program-data.js instead of regenerating it.
+
+    Ignores `generatedAt`, since that legitimately changes on every build.
+    """
+    committed_path = ROOT / "program-data.js"
+    text = committed_path.read_text()
+    prefix = "window.PROGRAM_DATA = "
+    assert text.startswith(prefix)
+    committed = json.loads(text[len(prefix):].rstrip("\n;"))
+
+    fresh = json.loads(json.dumps(payload))  # normalize (Counters -> plain ints already done by build)
+    committed.pop("generatedAt", None)
+    fresh.pop("generatedAt", None)
+
+    assert committed == fresh, (
+        "program-data.js does not match a fresh run of build_program_data.py. "
+        "Regenerate it with `python3 build_program_data.py` and commit the result."
+    )
