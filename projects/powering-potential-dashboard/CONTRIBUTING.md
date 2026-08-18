@@ -25,7 +25,31 @@ This dashboard is developed in
 `projects/powering-potential-dashboard/`. See "Publishing" below for how an
 update gets from one repo to the other.
 
-## Making a data change
+**Access limitation:** as of this writing, the taxonomy validation, tests,
+CI, split CSS/JS, access gate, and the ongoing activity-log pipeline
+(`DATA_COLLECTION_PROCESS.md`, `data/activity-log.csv`) only exist in this
+repo (`wilsonck75.github.io`), not yet in `D-Cubed-Data-Lab`. Treat this
+repo as the working copy for now. Once `D-Cubed-Data-Lab` is writable
+again, upstream this hardening so both repos share one pipeline.
+
+## Logging a new activity (ongoing, going forward)
+
+For a new site visit/install/upgrade/training/content update: **don't edit
+the xlsx.** Add a row to the shared activity log spreadsheet (which mirrors
+`data/activity-log.csv`) and rebuild. Full process, required fields, and
+the new-school checklist: see **`DATA_COLLECTION_PROCESS.md`**.
+
+Short version:
+```bash
+# after exporting the shared log spreadsheet to data/activity-log.csv
+pip install -r requirements.txt
+python3 build_program_data.py   # also regenerates canonical-schools.csv
+python3 -m pytest tests/ -v
+```
+This is the same duplicate-name/required-field validation described below,
+now running against newly logged rows too.
+
+## Making a data change (historical xlsx / taxonomy edits)
 
 1. Get the updated source file (usually
    `data/Implementation_Timeline_for_Website_2007-2025.xlsx`) into
@@ -50,7 +74,7 @@ update gets from one repo to the other.
    count legitimately went up because a new school was added), update the
    test alongside the data change in the same commit/PR, with a note on why.
 6. Commit `data/school-taxonomy.yml` and the regenerated `program-data.js`
-   together.
+   (and `canonical-schools.csv`) together.
 
 ## Making a UI/code change
 
@@ -96,11 +120,18 @@ to this repo's `projects/powering-potential-dashboard/`, then update
 
 ```
 index.html, dashboard.css, dashboard.js, program-extra.css, program.js,
-access-gate.js, dashboard-data.js, program-data.js, workbench-original.html,
-build_program_data.py, assemble_index.py, requirements.txt,
-data/Implementation_Timeline_for_Website_2007-2025.xlsx,
-data/school-taxonomy.yml, tests/
+access-gate.js, dashboard-data.js, program-data.js, canonical-schools.csv,
+workbench-original.html, build_program_data.py, assemble_index.py,
+requirements.txt, data/Implementation_Timeline_for_Website_2007-2025.xlsx,
+data/school-taxonomy.yml, data/activity-log.csv, tests/
 ```
+
+`data/activity-log.csv` is the exception to "publish from the source repo":
+since ongoing logging happens against whichever repo is the working copy
+(currently this one — see "Where things live" above), don't overwrite it
+with an older copy from `D-Cubed-Data-Lab` during a sync. `canonical-schools.csv`
+is always safe to regenerate/overwrite since it's fully derived from
+`program-data.js`.
 
 **Do not hand-edit `program-data.js`, `dashboard.css`, or `dashboard.js` in
 either repo.** They're generated; hand edits will be silently overwritten

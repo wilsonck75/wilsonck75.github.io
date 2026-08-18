@@ -1,21 +1,31 @@
 #!/usr/bin/env python3
-"""Build program-data.js from the implementation timeline workbook.
+"""Build program-data.js from the implementation timeline workbook plus any
+newer activity entries logged in data/activity-log.csv.
 
 Reviewable judgment calls (name aliases, Karatu 23 membership, tracked/
 not-tracked schools, etc.) live in data/school-taxonomy.yml, not in this
 file. Edit that YAML file to change how a school is classified, then re-run
 this script.
 
+data/activity-log.csv is the ongoing data-collection intake: new deploy/
+upgrade/training/content rows go there (see DATA_COLLECTION_PROCESS.md)
+instead of requiring someone to hand-edit the xlsx. Its rows are merged into
+the same event list as the xlsx's "By Date" sheet and go through identical
+normalization, classification, and validation.
+
 This script also runs a lightweight data-quality check: any two canonical
 school names that look like they might be unmerged spelling variants of the
 same school (and aren't explicitly confirmed as distinct in the taxonomy)
 will fail the build with a report of the suspicious pairs. This is meant to
 catch the exact class of bug that name_aliases exists to fix, at build time
-instead of silently in the dashboard.
+instead of silently in the dashboard. Because activity-log.csv rows are
+merged before this check runs, a newly logged school with a typo'd name
+gets caught the same way a messy timeline row would.
 """
 
 from __future__ import annotations
 
+import csv
 import difflib
 import json
 import re
@@ -30,7 +40,11 @@ from openpyxl import load_workbook
 ROOT = Path(__file__).resolve().parent
 TIMELINE = ROOT / "data" / "Implementation_Timeline_for_Website_2007-2025.xlsx"
 TAXONOMY_PATH = ROOT / "data" / "school-taxonomy.yml"
+ACTIVITY_LOG = ROOT / "data" / "activity-log.csv"
 OUT = ROOT / "program-data.js"
+CANONICAL_SCHOOLS_OUT = ROOT / "canonical-schools.csv"
+
+ACTIVITY_LOG_REQUIRED_COLUMNS = ["Year", "Month", "Implementation", "School", "District", "Country"]
 
 # Two canonical names with a similarity ratio at or above this threshold are
 # flagged as possible unmerged duplicates unless listed in
@@ -191,6 +205,69 @@ class Builder:
             return "inactive"
         return "unknown"
 
+    def load_activity_log_events(self, path: Path | None = None) -> list[dict]:
+        """Parse the ongoing activity-log CSV into the same event shape the
+        xlsx loop produces, tagged with source="activity-log" for provenance.
+
+        Returns an empty list if the file doesn't exist or has no data rows
+        (e.g. a fresh header-only template) — this is the normal state
+        between logged visits, not an error.
+
+        `path` defaults to the module-level ACTIVITY_LOG constant, looked up
+        at call time (not baked in as a default parameter value) so tests
+        can point it at a temp file by monkeypatching that constant.
+        """
+        if path is None:
+            path = ACTIVITY_LOG
+        if not path.exists():
+            return []
+
+        with path.open(newline="", encoding="utf-8") as fh:
+            reader = csv.DictReader(fh)
+            missing = [c for c in ACTIVITY_LOG_REQUIRED_COLUMNS if c not in (reader.fieldnames or [])]
+            if missing:
+                raise TaxonomyError(
+                    f"{path} is missing required column(s): {missing}. "
+                    f"Expected header: {','.join(ACTIVITY_LOG_REQUIRED_COLUMNS)}(,Notes,EnteredBy,EntryDate)"
+                )
+
+            events = []
+            for row_num, row in enumerate(reader, start=2):  # header is row 1
+                year = (row.get("Year") or "").strip()
+                impl = (row.get("Implementation") or "").strip()
+                school = (row.get("School") or "").strip()
+                if not year and not impl and not school:
+                    continue  # blank row, e.g. trailing newline
+                if not school:
+                    raise TaxonomyError(f"{path}:{row_num} has no School value; every logged row needs one.")
+                if not impl:
+                    raise TaxonomyError(f"{path}:{row_num} ({school}) has no Implementation/activity description.")
+                try:
+                    year_int = int(year) if year else None
+                except ValueError:
+                    raise TaxonomyError(f"{path}:{row_num} ({school}) has a non-numeric Year: {year!r}") from None
+
+                label = " ".join(impl.split())
+                canonical = self.normalizer.norm_name(school)
+                events.append(
+                    {
+                        "year": year_int,
+                        "month": " ".join((row.get("Month") or "").split()),
+                        "label": label,
+                        "rawSchool": " ".join(school.split()),
+                        "school": canonical,
+                        "district": " ".join((row.get("District") or "").split()),
+                        "country": (row.get("Country") or "").strip() or "Tanzania",
+                        "activityType": classify_activity(label),
+                        "generation": classify_generation(label),
+                        "source": "activity-log",
+                        "loggedNote": (row.get("Notes") or "").strip(),
+                        "enteredBy": (row.get("EnteredBy") or "").strip(),
+                        "entryDate": (row.get("EntryDate") or "").strip(),
+                    }
+                )
+            return events
+
     def run(self) -> dict:
         wb = load_workbook(TIMELINE, data_only=True)
         by_date = wb["By Date"]
@@ -213,8 +290,12 @@ class Builder:
                     "country": str(country).strip() if country else "Tanzania",
                     "activityType": classify_activity(label),
                     "generation": classify_generation(label),
+                    "source": "timeline",
                 }
             )
+
+        activity_log_events = self.load_activity_log_events()
+        events.extend(activity_log_events)
 
         zanzibar_names = []
         for name, region, district in zanzibar_sheet.iter_rows(min_row=2, max_col=3, values_only=True):
@@ -276,6 +357,10 @@ class Builder:
             if event["generation"] and event["generation"] not in row["generations"]:
                 row["generations"].append(event["generation"])
                 row["currentGeneration"] = event["generation"]
+            if event.get("source") == "activity-log" and event.get("loggedNote"):
+                who = f" ({event['enteredBy']})" if event.get("enteredBy") else ""
+                when = f" on {event['entryDate']}" if event.get("entryDate") else ""
+                row["notes"].append(f"{event['loggedNote']}{who}{when}".strip())
 
         # Data-quality gate: catch unmerged spelling variants before they
         # silently double-count a school in the dashboard.
@@ -417,6 +502,7 @@ class Builder:
             "inProgress": sum(1 for s in school_list if s["status"] == "in_progress"),
             "proposed": sum(1 for s in school_list if s["status"] == "proposed"),
             "datedTimelineRows": len(events),
+            "activityLogRows": sum(1 for e in events if e.get("source") == "activity-log"),
             "trainingRows": sum(1 for e in events if e["activityType"] == "training"),
             "deployRows": sum(1 for e in events if e["activityType"] == "deploy"),
             "knownComputers": sum(s["computers"] or 0 for s in school_list),
@@ -493,6 +579,28 @@ def build_payload(taxonomy_path: Path = TAXONOMY_PATH) -> dict:
     return Builder(taxonomy).run()
 
 
+def write_canonical_schools_csv(school_list: list[dict], path: Path = CANONICAL_SCHOOLS_OUT) -> None:
+    """Regenerate the canonical school picklist used for spreadsheet data
+    validation (see DATA_COLLECTION_PROCESS.md). Always derived fresh from
+    program-data.js's school list so it can never drift from what the
+    dashboard actually recognizes.
+    """
+    with path.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(["canonicalName", "cluster", "district", "country", "status", "inKaratu23"])
+        for school in sorted(school_list, key=lambda s: s["canonicalName"]):
+            writer.writerow(
+                [
+                    school["canonicalName"],
+                    school["cluster"],
+                    school["district"],
+                    school["country"],
+                    school["status"],
+                    "yes" if school["inKaratu23"] else "no",
+                ]
+            )
+
+
 def main() -> None:
     try:
         payload = build_payload()
@@ -502,8 +610,11 @@ def main() -> None:
 
     school_list = payload["schools"]
     events_count = payload["network"]["datedTimelineRows"]
+    log_count = payload["network"]["activityLogRows"]
     OUT.write_text("window.PROGRAM_DATA = " + json.dumps(payload, indent=2) + ";\n")
-    print(f"Wrote {OUT} ({len(school_list)} schools, {events_count} events)")
+    write_canonical_schools_csv(school_list)
+    print(f"Wrote {OUT} ({len(school_list)} schools, {events_count} events, {log_count} from activity-log.csv)")
+    print(f"Wrote {CANONICAL_SCHOOLS_OUT} ({len(school_list)} rows)")
 
 
 if __name__ == "__main__":

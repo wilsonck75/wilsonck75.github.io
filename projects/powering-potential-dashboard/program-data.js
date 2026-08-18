@@ -1,5 +1,5 @@
 window.PROGRAM_DATA = {
-  "generatedAt": "2026-08-18T00:57:05Z",
+  "generatedAt": "2026-08-18T01:51:39Z",
   "sources": {
     "timeline": "Implementation Timeline for Website_2007-2025.xlsx",
     "keyTab": "AJ Poole / Albin meeting notes in the Key tab and PEF Solution Generations Specification",
@@ -15,6 +15,7 @@ window.PROGRAM_DATA = {
     "inProgress": 1,
     "proposed": 1,
     "datedTimelineRows": 113,
+    "activityLogRows": 0,
     "trainingRows": 53,
     "deployRows": 43,
     "knownComputers": 498
