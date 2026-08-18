@@ -20,10 +20,12 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from build_program_data import (  # noqa: E402
+    Builder,
     TaxonomyError,
     build_payload,
     check_for_unmerged_duplicates,
     load_taxonomy,
+    write_canonical_schools_csv,
 )
 
 
@@ -35,6 +37,11 @@ def payload() -> dict:
 @pytest.fixture(scope="module")
 def taxonomy() -> dict:
     return load_taxonomy()
+
+
+@pytest.fixture()
+def builder(taxonomy) -> Builder:
+    return Builder(taxonomy)
 
 
 # --- Golden values: the exact facts the board has been told -----------------
@@ -160,3 +167,116 @@ def test_committed_program_data_matches_fresh_build(payload):
         "program-data.js does not match a fresh run of build_program_data.py. "
         "Regenerate it with `python3 build_program_data.py` and commit the result."
     )
+
+
+def test_committed_canonical_schools_csv_matches_fresh_build(payload, tmp_path):
+    """Guards against the picklist (used for spreadsheet data validation)
+    drifting from what the dashboard actually recognizes.
+    """
+    fresh_path = tmp_path / "canonical-schools.csv"
+    write_canonical_schools_csv(payload["schools"], path=fresh_path)
+    committed_path = ROOT / "canonical-schools.csv"
+    assert committed_path.read_text() == fresh_path.read_text(), (
+        "canonical-schools.csv does not match a fresh run of build_program_data.py. "
+        "Regenerate it with `python3 build_program_data.py` and commit the result."
+    )
+
+
+# --- Ongoing data collection: data/activity-log.csv -----------------------
+
+
+ACTIVITY_LOG_HEADER = "Year,Month,Implementation,School,District,Country,Notes,EnteredBy,EntryDate\n"
+
+
+def write_log(tmp_path, *rows: str) -> Path:
+    path = tmp_path / "activity-log.csv"
+    path.write_text(ACTIVITY_LOG_HEADER + "".join(row + "\n" for row in rows))
+    return path
+
+
+def test_checked_in_activity_log_template_is_empty_and_builds_clean(payload):
+    """The template ships with a header and no data rows: it should not
+    change canonicalSchools/datedTimelineRows from the xlsx-only baseline.
+    """
+    assert payload["network"]["activityLogRows"] == 0
+
+
+def test_activity_log_row_is_classified_and_merged(builder, tmp_path):
+    path = write_log(
+        tmp_path,
+        "2026,June,Training - Follow-up visit,Banjika,Karatu,Tanzania,Refresher for 3 teachers,Field Officer,2026-06-15",
+    )
+    events = builder.load_activity_log_events(path=path)
+    assert len(events) == 1
+    event = events[0]
+    assert event["school"] == "Banjika"
+    assert event["activityType"] == "training"
+    assert event["source"] == "activity-log"
+    assert event["loggedNote"] == "Refresher for 3 teachers"
+
+
+def test_activity_log_new_school_is_picked_up(builder, tmp_path):
+    path = write_log(
+        tmp_path,
+        "2026,July,SPARC+ Installation,A Brand New School,Karatu,Tanzania,,Field Officer,2026-07-01",
+    )
+    events = builder.load_activity_log_events(path=path)
+    assert events[0]["school"] == "A Brand New School"
+    assert events[0]["generation"] == "SPARC+"
+    assert events[0]["activityType"] == "deploy"
+
+
+def test_activity_log_missing_file_returns_no_events(builder, tmp_path):
+    assert builder.load_activity_log_events(path=tmp_path / "does-not-exist.csv") == []
+
+
+def test_activity_log_blank_trailing_row_is_skipped(builder, tmp_path):
+    path = write_log(
+        tmp_path,
+        "2026,June,Training,Banjika,Karatu,Tanzania,,,",
+        ",,,,,,,,",
+    )
+    events = builder.load_activity_log_events(path=path)
+    assert len(events) == 1
+
+
+def test_activity_log_missing_columns_raises(builder, tmp_path):
+    path = tmp_path / "activity-log.csv"
+    path.write_text("Year,Month,School\n2026,June,Banjika\n")
+    with pytest.raises(TaxonomyError, match="missing required column"):
+        builder.load_activity_log_events(path=path)
+
+
+def test_activity_log_missing_school_raises(builder, tmp_path):
+    path = write_log(tmp_path, "2026,June,Training,,Karatu,Tanzania,,,")
+    with pytest.raises(TaxonomyError, match="no School value"):
+        builder.load_activity_log_events(path=path)
+
+
+def test_activity_log_missing_implementation_raises(builder, tmp_path):
+    path = write_log(tmp_path, "2026,June,,Banjika,Karatu,Tanzania,,,")
+    with pytest.raises(TaxonomyError, match="no Implementation"):
+        builder.load_activity_log_events(path=path)
+
+
+def test_activity_log_bad_year_raises(builder, tmp_path):
+    path = write_log(tmp_path, "not-a-year,June,Training,Banjika,Karatu,Tanzania,,,")
+    with pytest.raises(TaxonomyError, match="non-numeric Year"):
+        builder.load_activity_log_events(path=path)
+
+
+def test_activity_log_typo_is_caught_by_duplicate_gate(taxonomy, tmp_path):
+    """End-to-end: a logged row with a near-duplicate school name should
+    fail the same way a messy timeline row would, not silently create a
+    second school.
+    """
+    import build_program_data as bpd
+
+    log_path = write_log(tmp_path, "2026,June,Training,Banjica,Karatu,Tanzania,Typo test,,")
+    original_activity_log = bpd.ACTIVITY_LOG
+    bpd.ACTIVITY_LOG = log_path
+    try:
+        with pytest.raises(TaxonomyError, match="unmerged school-name duplicates"):
+            build_payload()
+    finally:
+        bpd.ACTIVITY_LOG = original_activity_log
