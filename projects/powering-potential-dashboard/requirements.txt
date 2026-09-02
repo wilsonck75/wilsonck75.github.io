@@ -1,6 +1,0 @@
-# Pin versions so `program-data.js` regenerates deterministically across
-# machines and CI. Update deliberately (and re-run the tests) rather than
-# letting these float.
-openpyxl==3.1.5
-PyYAML==6.0.2
-pytest==8.3.5
