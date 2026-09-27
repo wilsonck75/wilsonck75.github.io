@@ -15,10 +15,14 @@ Run once:
 
 Output: tohoku_nz_array.npz
 ----------------------------
-Z, R, T    float32 (N, T)  – ZRT traces, normalised by Z-component peak
+Z, N, E    float32 (N, T)  – ZNE traces, normalised by Z-component peak
+R, T       float32 (N, T)  – radial/transverse (rotated from N/E via back-azimuth)
+L, Q       float32 (N, T)  – ray-aligned (L along ray, Q perp in vertical plane)
+                             obtained by rotating Z/R using the TauP incidence angle
 distances  float64 (N,)    – epicentral distance from event (km)
 dist_deg   float64 (N,)    – same in degrees
 baz        float64 (N,)    – back-azimuth from station to event (degrees)
+inc_angle  float64 (N,)    – TauP P-wave incidence angle at surface (degrees from vertical)
 stations   str     (N,)    – "NET.STA"
 times_rel  float64 (T,)    – seconds relative to predicted P arrival (0 = P)
 evt_*                      – event scalars (lat, lon, dep, time, mag)
@@ -26,6 +30,7 @@ sampling_rate              – samples per second stored
 """
 
 from pathlib import Path
+from typing import Optional, Tuple
 
 import numpy as np
 from obspy import UTCDateTime
@@ -49,18 +54,22 @@ DIST_MIN  = 6_000.0          # km  (~54°) — all NZ stations qualify
 DIST_MAX  = 9_500.0          # km  (~85°)
 PRE_P     =    5.0           # s before predicted P
 POST_P    =   45.0           # s after  predicted P  (captures P + Ps + gap)
-SAMP_OUT  =   10.0           # decimate to 10 sps (Nyquist 5 Hz; fine for Ps)
+SAMP_OUT  =   25.0           # decimate to 25 sps (Nyquist 12.5 Hz; better Ps resolution)
 BP_LOW    =    0.5           # Hz — lower corner lets long-period Ps come through
-BP_HIGH   =    2.0           # Hz
+BP_HIGH   =    5.0           # Hz
 OUT_FILE  = Path("tohoku_nz_array.npz")
 
 taup = TauPyModel("iasp91")
 
 
-def first_p_time(depth_km: float, dist_deg: float) -> float | None:
+def first_p_time(depth_km: float, dist_deg: float) -> Optional[Tuple[float, float]]:
+    """Return (travel_time_s, incidence_angle_deg) for the first P/Pdiff arrival."""
     arrivals = taup.get_travel_times(depth_km, dist_deg,
                                       phase_list=["P", "Pdiff"])
-    return min((a.time for a in arrivals), default=None)
+    if not arrivals:
+        return None
+    arr = min(arrivals, key=lambda a: a.time)
+    return arr.time, arr.incident_angle
 
 
 def preprocess(tr, factor: int) -> None:
@@ -84,8 +93,10 @@ def main() -> None:
     )
 
     npts_out = int((PRE_P + POST_P) * SAMP_OUT)
-    Z_list, R_list, T_list = [], [], []
-    dist_km_list, dist_deg_list, baz_list, sta_list = [], [], [], []
+    Z_list, N_list, E_list = [], [], []
+    R_list, T_list = [], []
+    L_list, Q_list = [], []
+    dist_km_list, dist_deg_list, baz_list, inc_list, sta_list = [], [], [], [], []
 
     for network in inventory:
         for station in network:
@@ -101,9 +112,10 @@ def main() -> None:
             if not (DIST_MIN <= dist_km <= DIST_MAX):
                 continue
 
-            p_tt = first_p_time(EVT_DEP, dist_deg)
-            if p_tt is None:
+            result = first_p_time(EVT_DEP, dist_deg)
+            if result is None:
                 continue
+            p_tt, inc_angle = result
 
             t_start = EVT_TIME + p_tt - PRE_P
             t_end   = EVT_TIME + p_tt + POST_P
@@ -133,8 +145,10 @@ def main() -> None:
 
             # Ensure equal length before rotation
             n = min(len(trZ.data), len(trN.data), len(trE.data), npts_out)
-            z = trZ.data[:n]
-            r, t = rotate_ne_rt(trN.data[:n], trE.data[:n], baz)
+            z_raw = trZ.data[:n]
+            n_raw = trN.data[:n]
+            e_raw = trE.data[:n]
+            r_raw, t_raw = rotate_ne_rt(n_raw, e_raw, baz)
 
             # Pad to exact output length if needed
             def pad(arr):
@@ -142,19 +156,37 @@ def main() -> None:
                     arr = np.pad(arr, (0, npts_out - len(arr)))
                 return arr[:npts_out]
 
-            z, r, t = pad(z), pad(r), pad(t)
+            z_raw, n_raw, e_raw = pad(z_raw), pad(n_raw), pad(e_raw)
+            r_raw, t_raw = pad(r_raw), pad(t_raw)
 
-            # Normalise all three by Z peak so relative amplitudes are preserved
-            peak = np.max(np.abs(z))
+            # Normalise all components by Z peak so relative amplitudes are preserved
+            peak = np.max(np.abs(z_raw))
             if peak == 0:
                 continue
 
-            Z_list.append((z / peak).astype("float32"))
-            R_list.append((r / peak).astype("float32"))
-            T_list.append((t / peak).astype("float32"))
+            z = z_raw / peak
+            n_out = n_raw / peak
+            e_out = e_raw / peak
+            r = r_raw / peak
+            t = t_raw / peak
+
+            # ZR → LQ rotation using TauP incidence angle (i from vertical)
+            # L is along the ray (≈Z for steep arrivals), Q is in-plane perpendicular
+            i_rad = np.radians(inc_angle)
+            l_out =  z * np.cos(i_rad) + r * np.sin(i_rad)
+            q_out = -z * np.sin(i_rad) + r * np.cos(i_rad)
+
+            Z_list.append(z.astype("float32"))
+            N_list.append(n_out.astype("float32"))
+            E_list.append(e_out.astype("float32"))
+            R_list.append(r.astype("float32"))
+            T_list.append(t.astype("float32"))
+            L_list.append(l_out.astype("float32"))
+            Q_list.append(q_out.astype("float32"))
             dist_km_list.append(dist_km)
             dist_deg_list.append(dist_deg)
             baz_list.append(baz)
+            inc_list.append(inc_angle)
             sta_list.append(f"{network.code}.{station.code}")
             print(f"  ✓  {network.code}.{station.code:6s}  "
                   f"{dist_km:6.0f} km  baz={baz:.0f}°")
@@ -168,11 +200,16 @@ def main() -> None:
     np.savez_compressed(
         str(OUT_FILE),
         Z             = np.vstack(Z_list),
+        N             = np.vstack(N_list),
+        E             = np.vstack(E_list),
         R             = np.vstack(R_list),
         T             = np.vstack(T_list),
+        L             = np.vstack(L_list),
+        Q             = np.vstack(Q_list),
         distances     = np.array(dist_km_list, dtype="float64"),
         dist_deg      = np.array(dist_deg_list, dtype="float64"),
         baz           = np.array(baz_list,      dtype="float64"),
+        inc_angle     = np.array(inc_list,      dtype="float64"),
         stations      = np.array(sta_list),
         times_rel     = times_rel,
         evt_lat       = EVT_LAT,

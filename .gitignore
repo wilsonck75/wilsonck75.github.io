@@ -30,3 +30,8 @@ WARP.md
 # --- Python cache ---
 __pycache__/
 *.py[cod]
+
+# --- NZ P-wave moveout generated artifacts ---
+projects/nz-p-wave-moveout/*.png
+projects/nz-p-wave-moveout/*.npz
+projects/nz-p-wave-moveout/remote-kernel/
